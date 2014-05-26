@@ -1,6 +1,7 @@
 import Window
 import Mouse
 
+-- center : (Float, Float) -> (Float, Float)
 center (w, h) = (div w 2 , div h 2)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 cursor = filled darkCharcoal (rect 10 10)
@@ -16,18 +17,21 @@ controlScene (mouseX, mouseY) =
       (toForm (asText (mouseX, mouseY)))
   ]
 
-toolbar =
+toolView scene =
+  [scale 0.25 <| group scene]
+
+toolbar mouse =
   flow down [
-    collage 80 80 (map (\x -> scale 0.25 x) myScene)
+    collage 80 80 <| toolView <| myScene mouse
   , image 80 80 "./yogi.jpg"
   ]
 
 render (w, h) (dt, mouse) =
   color lightGray <| container w h middle
     <| flow right [
-         toolbar
+         toolbar mouse
        , color gray
-           <| collage 1024 600 (myScene ++ (controlScene mouse))
+           <| collage 1024 600 ((myScene mouse) ++ (controlScene mouse))
        ]
 
 areaRect w h = w * h
@@ -38,8 +42,7 @@ rectangle w h colr =
     toForm (asText (areaRect w h))
   ]
 
-
-myScene =
+myScene (mouseX, mouseY) =
   [ --outlined (dashed blue) (ngon 5 300)
     filled red (circle 75)
   , rotate (degrees 60)
@@ -48,7 +51,8 @@ myScene =
   , move (40, 40)
       (rectangle 80 80 red)
 
-  , (rectangle 20 20 green)
+  , move (toFloat mouseX, toFloat mouseY)
+      (rectangle 20 20 green)
   --, toForm (asText "hello world")
   ]
 
