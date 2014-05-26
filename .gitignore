@@ -29,6 +29,8 @@ node_modules
 *.sqlite3
 db/development.sqlite3
 
-### ignore various cubehero directories
+# elm projects
+build
+cache
 
 
