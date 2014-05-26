@@ -44,15 +44,18 @@ rectangle w h colr =
 
 myScene (mouseX, mouseY) =
   [ --outlined (dashed blue) (ngon 5 300)
-    filled red (circle 75)
-  , rotate (degrees 60)
-      (move (0, 0)
-        (rectangle 100 100 yellow))
-  , move (40, 40)
-      (rectangle 80 80 red)
+    rotate (degrees 45)
+      <| move (0, 0)
+        <| rectangle 100 100 red
+
+  , move (30, 30)
+      <| filled red <| circle 50
+
+  , move (-30, 30)
+      <| filled red <| circle 50
 
   , move (toFloat mouseX, toFloat mouseY)
-      (rectangle 20 20 green)
+      (rectangle 50 50 green)
   --, toForm (asText "hello world")
   ]
 
