@@ -17,31 +17,31 @@ rectangle w h colr =
     toForm (asText (areaRect w h))
   ]
 
-render (w, h) (dt, mouse) = color lightGray <| container w h  middle
-                                     <| color gray
-                                     <| collage 800 600 (myScene mouse)
-  
-myScene (mouseX, mouseY) = [
-    move (toFloat mouseX, toFloat mouseY)
-      (cursor)
+render (w, h) (dt, mouse) = color lightGray
+                              <| container w h  middle
+                              <| color gray
+                              <| collage 1024 600 (myScene ++ (controlScene mouse))
 
-    --filled red (circle 40),
-    --outlined (dashed blue) (ngon 5 100),
-    --toForm (asText (round (areaCircle 40))),
+controlScene (mouseX, mouseY) =
+  [ move (toFloat mouseX, toFloat mouseY)
+      cursor
 
-    --rotate (degrees 60)
-    --  (move (0, 0)
-    --    (rectangle 100 100 yellow)),
-
-    --move (40, 40)
-    --  (rectangle 80 80 red),
-
-    -- move (-400, -300)
-    -- (lift asText Mouse.position)
+  , move (toFloat -350, toFloat 290)
+      (toForm (asText (mouseX, mouseY)))
   ]
 
+myScene =
+  [ outlined (dashed blue) (ngon 5 300)
+  , filled red (circle 75)
+  , rotate (degrees 60)
+      (move (0, 0)
+        (rectangle 100 100 yellow))
+  , move (40, 40)
+      (rectangle 80 80 red)
 
--- main = lift2 render (lift myScene) mousePos
+  --, toForm (asText "hello world")
+  ]
+
 
 main = lift2 render Window.dimensions input
 
