@@ -21,17 +21,14 @@ toolView scene =
   [scale 0.25 <| group scene]
 
 toolbar mouse =
-  flow down [
-    collage 80 80 <| toolView <| myScene mouse
-  , image 80 80 "./yogi.jpg"
-  ]
+  flow down <| map (\scene -> collage 80 80 <| toolView <| scene mouse) scenes
 
 render (w, h) (dt, mouse) =
   color lightGray <| container w h middle
     <| flow right [
          toolbar mouse
        , color gray
-           <| collage 1024 600 ((myScene mouse) ++ (controlScene mouse))
+           <| collage 1024 600 <| (head scenes) mouse
        ]
 
 areaRect w h = w * h
@@ -42,21 +39,59 @@ rectangle w h colr =
     toForm (asText (areaRect w h))
   ]
 
-myScene (mouseX, mouseY) =
-  [ --outlined (dashed blue) (ngon 5 300)
-    rotate (degrees 45)
-      <| move (0, 0)
-        <| rectangle 100 100 red
+clubScene (mouseX, mouseY) =
+  [
+    move (0, 60)
+      <| filled charcoal <| circle 40
+  , move (35, 0)
+      <| filled charcoal <| circle 40
+  , move (-35, 0)
+      <| filled charcoal <| circle 40
+  , move (0, -35)
+      <| filled charcoal <| rect 20 80
+  ]
 
-  , move (30, 30)
+heartScene (mouseX, mouseY) =
+  [ --outlined (dashed blue) (ngon 5 300)
+    move (30, 30)
       <| filled red <| circle 50
 
   , move (-30, 30)
       <| filled red <| circle 50
 
+  , rotate (degrees 45)
+      <| move (0, 0)
+        <| rectangle 100 100 red
+  ]
+
+diamondScene (mouseX, mouseY) =
+  [
+    filled red <| ngon 4 80
+  ]
+
+includeScene scene =
+  group scene
+
+scratchScene (mouseX, mouseY) =
+  [
+    includeScene <| clubScene (mouseX, mouseY)
+
+  , move(50, 50)
+      <| scale (0.9)
+      <| rotate (degrees 30)
+      <| includeScene (clubScene (mouseX, mouseY))
+
   , move (toFloat mouseX, toFloat mouseY)
       (rectangle 50 50 green)
   --, toForm (asText "hello world")
+
+  ]
+
+scenes =
+  [ scratchScene
+  , heartScene
+  , clubScene
+  , diamondScene
   ]
 
 
