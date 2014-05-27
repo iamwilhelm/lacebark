@@ -72,17 +72,32 @@ diamondScene (mouseX, mouseY) =
 includeScene scene =
   group scene
 
+recursiveIncludeScene scene transform transform2 depth =
+  group
+    <| ([scene]
+          ++ case depth of
+               1 ->
+                 []
+               _ ->
+                 [
+                   transform
+                     (recursiveIncludeScene scene transform transform2 (depth - 1))
+                 , transform2
+                     (recursiveIncludeScene scene transform transform2 (depth - 1))
+                 ]
+       )
+
 scratchScene (mouseX, mouseY) =
   [
-    includeScene <| clubScene (mouseX, mouseY)
+    recursiveIncludeScene
+      --(group <| diamondScene (mouseX, mouseY))
+      (filled red <| ngon 4 40)
+      (move (toFloat mouseX / 3, toFloat mouseY / 3) . rotate (degrees <| toFloat mouseX) . scale 0.8)
+      (move (toFloat mouseX / 3 - 80, toFloat mouseY / 3 - 80) . rotate (degrees <| toFloat mouseY) . scale 0.7)
+      8
 
-  , move(50, 50)
-      <| scale (0.9)
-      <| rotate (degrees 30)
-      <| includeScene (clubScene (mouseX, mouseY))
-
-  , move (toFloat mouseX, toFloat mouseY)
-      (rectangle 50 50 green)
+  -- , move (toFloat mouseX, toFloat mouseY)
+  --     (rectangle 50 50 green)
   --, toForm (asText "hello world")
 
   ]
@@ -96,4 +111,27 @@ scenes =
 
 
 main = lift2 render Window.dimensions input
+
+--    group [
+--      filled red <| ngon 4 80
+--    , move (50, 50)
+--        <| scale (0.9)
+--        <| rotate (degrees 30)
+--        <| group [
+--             filled red <| ngon 4 80
+--           , move (50, 50)
+--              <| scale (0.9)
+--              <| rotate (degrees 30)
+--              <| group [
+--                   filled red <| ngon 4 80
+--                 , move (50, 50)
+--                   <| scale (0.9)
+--                   <| rotate (degrees 30)
+--                   <| group [
+--                        filled red <| ngon 4 80
+--                      ]
+--                 ]
+--           ]
+--    ]
+
 
