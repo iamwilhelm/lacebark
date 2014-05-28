@@ -1,13 +1,25 @@
 import Window
 import Mouse
 
--- center : (Float, Float) -> (Float, Float)
+center : (Int, Int) -> (Int, Int)
 center (w, h) = (div w 2 , div h 2)
+
+relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 cursor = filled darkCharcoal (rect 10 10)
 
 input = (,) <~ lift inSeconds (fps 30)
              ~ lift2 relativeMouse (center <~ Window.dimensions) Mouse.position
+
+areaRect w h = w * h
+
+rectangle w h colr =
+  group [
+    filled colr (rect w h),
+    toForm (asText (areaRect w h))
+  ]
+
+
 
 controlScene (mouseX, mouseY) =
   [ move (toFloat mouseX, toFloat mouseY)
@@ -30,14 +42,6 @@ render (w, h) (dt, mouse) =
        , color gray
            <| collage 1024 600 <| (head scenes) mouse
        ]
-
-areaRect w h = w * h
-
-rectangle w h colr = 
-  group [
-    filled colr (rect w h),
-    toForm (asText (areaRect w h))
-  ]
 
 clubScene (mouseX, mouseY) =
   [
