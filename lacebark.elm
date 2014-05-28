@@ -20,6 +20,30 @@ rectangle w h colr =
   ]
 
 
+render (w, h) (dt, mouse) =
+  let mainScene scene = scene.rootShape
+      scenes = [mainScene initialScene]
+  in  color lightGray
+        <| container w h middle
+        <| flow right [
+             toolbar mouse
+           , color gray <| collage 1024 600 <| scenes
+           ]
+
+
+-- a scene shows a shape. Each shape can be composed of many other shapes or itself 
+-- Shapes are of type Form
+initialScene = { rootShape = group [ filled red <| ngon 5 80 ]
+               , camera = []
+               , shapeTools = [ diamondShape ]
+               }
+
+diamondShape =
+  group [
+    filled red <| ngon 4 80
+  ]
+
+
 
 controlScene (mouseX, mouseY) =
   [ move (toFloat mouseX, toFloat mouseY)
@@ -34,14 +58,6 @@ toolView scene =
 
 toolbar mouse =
   flow down <| map (\scene -> collage 80 80 <| toolView <| scene mouse) scenes
-
-render (w, h) (dt, mouse) =
-  color lightGray <| container w h middle
-    <| flow right [
-         toolbar mouse
-       , color gray
-           <| collage 1024 600 <| (head scenes) mouse
-       ]
 
 clubScene (mouseX, mouseY) =
   [
