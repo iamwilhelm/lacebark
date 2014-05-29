@@ -17,10 +17,8 @@ relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 cursor = filled darkCharcoal (rect 10 10)
 
-input = (,) <~ lift inSeconds (fps 30)
-             ~ lift2 relativeMouse (center <~ Window.dimensions) Mouse.position
 
-
+-- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
 type Glyph = { pos: Vec, vel: Vec, rad: Float, col:Color, forms:Form }
 
 initialGlyph = { pos = (0, 0)
@@ -30,52 +28,75 @@ initialGlyph = { pos = (0, 0)
                , forms = group [ filled red <| ngon 5 40 ]
                }
 
+clubGlyph = { initialGlyph |
+  forms <- group [
+             move (0, 60)
+               <| filled charcoal <| circle 40
+           , move (35, 0)
+               <| filled charcoal <| circle 40
+           , move (-35, 0)
+               <| filled charcoal <| circle 40
+           , move (0, -35)
+               <| filled charcoal <| rect 20 80
+           ] }
+
+heartGlyph = { initialGlyph |
+  forms <- group [
+             move (30, 30)
+               <| filled red <| circle 50
+
+           , move (-30, 30)
+               <| filled red <| circle 50
+
+           , rotate (degrees 45)
+               <| move (0, 0)
+                 <| filled red
+                   <| rect 100 100
+
+           ] }
+
 diamondGlyph = { initialGlyph |
   forms <- group [ filled red <| ngon 4 80 ] }
 
-clubGlyph = {
-  initialGlyph |
-    forms <- group [
-               move (0, 60)
-                 <| filled charcoal <| circle 40
-             , move (35, 0)
-                 <| filled charcoal <| circle 40
-             , move (-35, 0)
-                 <| filled charcoal <| circle 40
-             , move (0, -35)
-                 <| filled charcoal <| rect 20 80
-             ] }
 
-updateGlyph : Time -> Glyph -> Glyph
-updateGlyph dt s = { s | pos <- vecAdd s.pos <| vecMulS s.vel dt }
+type Scene = { camera:Float, glyphTools:[Glyph], rootGlyph:Glyph }
+-- Glyphs are of type Form
+initialGlyphTools = [ initialGlyph, clubGlyph, heartGlyph, diamondGlyph ]
 
+initialScene = { camera = 0
+               , glyphTools = initialGlyphTools
+               , rootGlyph = head initialGlyphTools
+               }
 
+updateGlyph : Time -> (Int, Int) -> Glyph -> Glyph
+updateGlyph dt (mouseX, mouseY) g = { g |
+    pos <- (toFloat mouseX, toFloat mouseY) }
+--  , pos <- vecAdd g.pos <| vecMulS g.vel dt }
 
-render : (Int, Int) -> Glyph -> Element
-render (w, h) shape =
-  -- let mainScene scene = scene.rootGlyph
-  --     scenes = [mainScene initialScene]
+updateScene : (Time, (Int, Int)) -> Scene -> Scene
+updateScene (dt, mouse) s = { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph }
+
+render : (Int, Int) -> Scene -> Element
+render (w, h) scene =
   let renderGlyph {rad, col, pos, forms} = move pos <| forms
-      shapes = [renderGlyph shape]
+      renderScene {rootGlyph} = renderGlyph rootGlyph
+      scenes = [renderScene scene]
   in  color lightGray
         <| container w h middle
         <| flow right [
              -- toolbar mouse
-             color gray <| collage 1024 600 <| shapes
+             color gray <| collage 1024 600 <| scenes
            ]
 
 
--- initialGlyphTools = [ scratchGlyph, diamondGlyph, clubGlyph ]
+clock = lift inSeconds (fps 30)
+input = (,) <~ clock
+             ~ lift2 relativeMouse (center <~ Window.dimensions) Mouse.position
+
+main = render <~ Window.dimensions ~ foldp updateScene initialScene input
+
+
 -- 
--- -- a scene shows a shape. Each shape can be composed of many other shapes or itself 
--- -- Glyphs are of type Form
--- initialScene = { camera = []
---                , shapeTools = initialGlyphTools
---                , rootGlyph = head initialGlyphTools
---                }
--- 
--- updateScene : Time -> Scene -> Scene
--- updateScene dt s = { s | }
 
 --scratchGlyph =
 --  group [
@@ -92,12 +113,6 @@ render (w, h) shape =
 --  --    8
 --  ]
 
-
-clock = lift inSeconds (fps 30)
-main = render <~ Window.dimensions ~ foldp updateGlyph initialGlyph clock
-
-
-
 --controlScene (mouseX, mouseY) =
 --  [ move (toFloat mouseX, toFloat mouseY)
 --      cursor
@@ -111,38 +126,6 @@ main = render <~ Window.dimensions ~ foldp updateGlyph initialGlyph clock
 --
 --toolbar mouse =
 --  flow down <| map (\scene -> collage 80 80 <| toolView <| scene mouse) scenes
---
---clubScene (mouseX, mouseY) =
---  [
---    move (0, 60)
---      <| filled charcoal <| circle 40
---  , move (35, 0)
---      <| filled charcoal <| circle 40
---  , move (-35, 0)
---      <| filled charcoal <| circle 40
---  , move (0, -35)
---      <| filled charcoal <| rect 20 80
---  ]
---
---heartScene (mouseX, mouseY) =
---  [ --outlined (dashed blue) (ngon 5 300)
---    move (30, 30)
---      <| filled red <| circle 50
---
---  , move (-30, 30)
---      <| filled red <| circle 50
---
---  , rotate (degrees 45)
---      <| move (0, 0)
---        <| filled red
---          <| rect 100 100
---
---  ]
---
---diamondScene (mouseX, mouseY) =
---  [
---    filled red <| ngon 4 80
---  ]
 --
 --includeScene scene =
 --  group scene
