@@ -54,11 +54,31 @@ heartGlyph = { initialGlyph |
                          <| rect 100 100
                  ] }
 
-
 diamondGlyph = { initialGlyph |
     formGroup <- group [ filled red <| ngon 4 80 ] }
 
-initialGlyphTools = [ initialGlyph, clubGlyph, heartGlyph, diamondGlyph ]
+rectangleGlyph = { initialGlyph |
+    formGroup <- group [
+                   filled blue <| rect 120 120
+                 ] }
+
+circleGlyph = { initialGlyph |
+    formGroup <- group [
+                   filled yellow <| circle 75
+                 ] }
+
+include : Glyph -> Form
+include glyph = move glyph.pos glyph.formGroup
+
+scratchGlyph = { initialGlyph |
+    formGroup <- group [
+                   include rectangleGlyph
+                 ,
+                   move (80, 80)
+                     <| include circleGlyph
+                 ] }
+
+initialGlyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
 
 
 type Scene = { camera:Float, rootGlyph:Glyph, glyphTools:[Glyph] }
