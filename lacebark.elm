@@ -19,50 +19,49 @@ cursor = filled darkCharcoal (rect 10 10)
 
 
 -- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
-type Glyph = { pos: Vec, vel: Vec, rad: Float, col:Color, formGroup:Form }
+type Glyph = { pos: Vec, vel: Vec, rad: Float, colr:Color, formGroup:Form }
 
 initialGlyph = { pos = (0, 0)
                , vel = (0, 0)
                , rad = 0
-               , col = red
+               , colr = blue
                , formGroup = group [ filled red <| ngon 5 40 ]
                }
 
 clubGlyph = { initialGlyph |
-  formGroup <- group [
-             move (0, 60)
-               <| filled charcoal <| circle 40
-           , move (35, 0)
-               <| filled charcoal <| circle 40
-           , move (-35, 0)
-               <| filled charcoal <| circle 40
-           , move (0, -35)
-               <| filled charcoal <| rect 20 80
-           ] }
+    formGroup <- group [
+                   move (0, 60)
+                     <| filled charcoal <| circle 40
+                 , move (35, 0)
+                     <| filled charcoal <| circle 40
+                 , move (-35, 0)
+                     <| filled charcoal <| circle 40
+                 , move (0, -35)
+                     <| filled charcoal <| rect 20 80
+                 ] }
 
 heartGlyph = { initialGlyph |
-  formGroup <- group [
-             move (30, 30)
-               <| filled red <| circle 50
+    formGroup <- group [
+                   move (30, 30)
+                     <| filled red <| circle 50
 
-           , move (-30, 30)
-               <| filled red <| circle 50
+                 , move (-30, 30)
+                     <| filled red <| circle 50
 
-           , rotate (degrees 45)
-               <| move (0, 0)
-                 <| filled red
-                   <| rect 100 100
+                 , rotate (degrees 45)
+                     <| move (0, 0)
+                       <| filled red
+                         <| rect 100 100
+                 ] }
 
-           ] }
 
 diamondGlyph = { initialGlyph |
-  formGroup <- group [ filled red <| ngon 4 80 ] }
+    formGroup <- group [ filled red <| ngon 4 80 ] }
+
+initialGlyphTools = [ initialGlyph, clubGlyph, heartGlyph, diamondGlyph ]
 
 
 type Scene = { camera:Float, rootGlyph:Glyph, glyphTools:[Glyph] }
--- Glyphs are of type Form
-initialGlyphTools = [ initialGlyph, clubGlyph, heartGlyph, diamondGlyph ]
-
 initialScene = { camera = 0
                , glyphTools = initialGlyphTools
                , rootGlyph = head initialGlyphTools
@@ -83,8 +82,10 @@ updateScene (dt, mouse) s = { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
-  let renderGlyph {rad, col, pos, formGroup} = move pos <| formGroup
-      renderScene {camera, rootGlyph, glyphTools} = [ renderGlyph rootGlyph ]
+  let renderGlyph {rad, colr, pos, formGroup} =
+        move pos <| formGroup
+      renderScene {camera, rootGlyph, glyphTools} =
+        [ renderGlyph rootGlyph ]
       renderToolbar {camera, glyphTools} =
         flow down <| map (\glyph -> collage 80 80 [scale 0.2 <| renderGlyph glyph]) glyphTools
   in  color lightGray
