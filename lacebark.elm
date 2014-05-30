@@ -19,17 +19,17 @@ cursor = filled darkCharcoal (rect 10 10)
 
 
 -- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
-type Glyph = { pos: Vec, vel: Vec, rad: Float, col:Color, forms:Form }
+type Glyph = { pos: Vec, vel: Vec, rad: Float, col:Color, formGroup:Form }
 
 initialGlyph = { pos = (0, 0)
-               , vel = (0, -1)
+               , vel = (0, 0)
                , rad = 0
                , col = red
-               , forms = group [ filled red <| ngon 5 40 ]
+               , formGroup = group [ filled red <| ngon 5 40 ]
                }
 
 clubGlyph = { initialGlyph |
-  forms <- group [
+  formGroup <- group [
              move (0, 60)
                <| filled charcoal <| circle 40
            , move (35, 0)
@@ -41,7 +41,7 @@ clubGlyph = { initialGlyph |
            ] }
 
 heartGlyph = { initialGlyph |
-  forms <- group [
+  formGroup <- group [
              move (30, 30)
                <| filled red <| circle 50
 
@@ -56,10 +56,10 @@ heartGlyph = { initialGlyph |
            ] }
 
 diamondGlyph = { initialGlyph |
-  forms <- group [ filled red <| ngon 4 80 ] }
+  formGroup <- group [ filled red <| ngon 4 80 ] }
 
 
-type Scene = { camera:Float, glyphTools:[Glyph], rootGlyph:Glyph }
+type Scene = { camera:Float, rootGlyph:Glyph, glyphTools:[Glyph] }
 -- Glyphs are of type Form
 initialGlyphTools = [ initialGlyph, clubGlyph, heartGlyph, diamondGlyph ]
 
@@ -68,24 +68,30 @@ initialScene = { camera = 0
                , rootGlyph = head initialGlyphTools
                }
 
+
 updateGlyph : Time -> (Int, Int) -> Glyph -> Glyph
-updateGlyph dt (mouseX, mouseY) g = { g |
-    pos <- (toFloat mouseX, toFloat mouseY) }
---  , pos <- vecAdd g.pos <| vecMulS g.vel dt }
+updateGlyph dt (mouseX, mouseY) g = { g | pos <- vecAdd g.pos <| vecMulS g.vel dt }
+
+updateGlyphTools : Time -> (Int, Int) -> [Glyph] -> [Glyph]
+updateGlyphTools dt (mouseX, mouseY) glyphTools =
+  map (\glyph -> updateGlyph dt (mouseX, mouseY) glyph) glyphTools
 
 updateScene : (Time, (Int, Int)) -> Scene -> Scene
-updateScene (dt, mouse) s = { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph }
+updateScene (dt, mouse) s = { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph
+                                , glyphTools <- updateGlyphTools dt mouse s.glyphTools }
+
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
-  let renderGlyph {rad, col, pos, forms} = move pos <| forms
-      renderScene {rootGlyph} = renderGlyph rootGlyph
-      scenes = [renderScene scene]
+  let renderGlyph {rad, col, pos, formGroup} = move pos <| formGroup
+      renderScene {camera, rootGlyph, glyphTools} = [ renderGlyph rootGlyph ]
+      renderToolbar {camera, glyphTools} =
+        flow down <| map (\glyph -> collage 80 80 [scale 0.2 <| renderGlyph glyph]) glyphTools
   in  color lightGray
         <| container w h middle
         <| flow right [
-             -- toolbar mouse
-             color gray <| collage 1024 600 <| scenes
+             renderToolbar scene
+           , color gray <| collage 1024 600 <| renderScene scene
            ]
 
 
@@ -97,39 +103,6 @@ main = render <~ Window.dimensions ~ foldp updateScene initialScene input
 
 
 -- 
-
---scratchGlyph =
---  group [
---    diamondGlyph
---
---  --, includeGlyph
---  --    (filled red <| ngon 4 40)
---  --    (move (toFloat mouseX / 3, toFloat mouseY / 3) . rotate (degrees <| toFloat mouseX) . scale 0.8)
---  --    8
---
---  --, recursiveIncludeScene
---  --    (filled red <| ngon 4 40)
---  --    (move (toFloat mouseX / 3 - 80, toFloat mouseY / 3 - 80) . rotate (degrees <| toFloat mouseY) . scale 0.7)
---  --    8
---  ]
-
---controlScene (mouseX, mouseY) =
---  [ move (toFloat mouseX, toFloat mouseY)
---      cursor
---
---  , move (toFloat -350, toFloat 290)
---      (toForm (asText (mouseX, mouseY)))
---  ]
---
---toolView scene =
---  [scale 0.25 <| group scene]
---
---toolbar mouse =
---  flow down <| map (\scene -> collage 80 80 <| toolView <| scene mouse) scenes
---
---includeScene scene =
---  group scene
---
 --recursiveIncludeScene scene transform transform2 depth =
 --  group
 --    <| ([scene]
@@ -159,13 +132,4 @@ main = render <~ Window.dimensions ~ foldp updateScene initialScene input
 --  --, toForm (asText "hello world")
 --
 --  ]
---
---scenes =
---  [ scratchScene
---  , heartScene
---  , clubScene
---  , diamondScene
---  ]
-
-
 
