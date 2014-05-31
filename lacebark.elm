@@ -15,7 +15,10 @@ center (w, h) = (div w 2 , div h 2)
 
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
-cursor = filled darkCharcoal (rect 10 10)
+
+-- a hack to correct for width of toolbar
+toolbarAdjust: (Int, Int) -> (Int, Int)
+toolbarAdjust (x, y) = (x + 80, y)
 
 
 -- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
@@ -78,13 +81,22 @@ scratchGlyph = { initialGlyph |
                      <| include circleGlyph
                  ] }
 
+cursorArrowGlyph = { initialGlyph |
+    formGroup <- scale 0.4 <| group [
+                   filled black <| ngon 3 20
+                 , move (8.25, -15)
+                   <| rotate (degrees 30)
+                   <| filled black <| rect 10 25
+                 ] }
+
 initialGlyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
 
 
-type Scene = { camera:Float, rootGlyph:Glyph, glyphTools:[Glyph] }
+type Scene = { camera:Float, rootGlyph:Glyph, glyphTools:[Glyph], cursor:Glyph }
 initialScene = { camera = 0
                , glyphTools = initialGlyphTools
                , rootGlyph = head initialGlyphTools
+               , cursor = cursorArrowGlyph
                }
 
 
@@ -95,17 +107,22 @@ updateGlyphTools : Time -> (Int, Int) -> [Glyph] -> [Glyph]
 updateGlyphTools dt (mouseX, mouseY) glyphTools =
   map (\glyph -> updateGlyph dt (mouseX, mouseY) glyph) glyphTools
 
+updateCursor : Time -> (Int, Int) -> Glyph -> Glyph
+updateCursor dt (mouseX, mouseY) glyph =
+  { glyph | pos <- (toFloat mouseX, toFloat mouseY) }
+
 updateScene : (Time, (Int, Int)) -> Scene -> Scene
 updateScene (dt, mouse) s = { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph
-                                , glyphTools <- updateGlyphTools dt mouse s.glyphTools }
+                                , glyphTools <- updateGlyphTools dt mouse s.glyphTools
+                                , cursor <- updateCursor dt mouse s.cursor }
 
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
   let renderGlyph {rad, colr, pos, formGroup} =
         move pos <| formGroup
-      renderScene {camera, rootGlyph, glyphTools} =
-        [ renderGlyph rootGlyph ]
+      renderScene {camera, rootGlyph, glyphTools, cursor} =
+        [ renderGlyph rootGlyph, renderGlyph cursor ]
       renderToolbar {camera, glyphTools} =
         flow down <| map (\glyph -> collage 80 80 [scale 0.2 <| renderGlyph glyph]) glyphTools
   in  color lightGray
@@ -118,7 +135,7 @@ render (w, h) scene =
 
 clock = lift inSeconds (fps 30)
 input = (,) <~ clock
-             ~ lift2 relativeMouse (center <~ Window.dimensions) Mouse.position
+             ~ lift2 relativeMouse (center <~ (toolbarAdjust <~ Window.dimensions)) Mouse.position
 
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
 
