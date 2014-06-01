@@ -31,6 +31,30 @@ initialGlyph = { pos = (0, 0)
                , formGroup = group [ filled red <| ngon 5 40 ]
                }
 
+cursorArrowGlyph = { initialGlyph |
+    formGroup <- scale 0.4 <| group [
+                   filled black <| ngon 3 20
+                 , move (8.25, -15)
+                   <| rotate (degrees 30)
+                   <| filled black <| rect 10 25
+                 ] }
+
+cursorHandGlyph = { initialGlyph |
+    formGroup <- scale 0.4 <| group [
+                   filled black <| circle 20
+                 ] }
+
+rectangleGlyph = { initialGlyph |
+    formGroup <- group [
+                   filled blue <| rect 120 120
+                 ] }
+
+circleGlyph = { initialGlyph |
+    formGroup <- group [
+                   filled yellow <| circle 75
+                 ] }
+
+
 clubGlyph = { initialGlyph |
     formGroup <- group [
                    move (0, 60)
@@ -60,19 +84,6 @@ heartGlyph = { initialGlyph |
 diamondGlyph = { initialGlyph |
     formGroup <- group [ filled red <| ngon 4 80 ] }
 
-rectangleGlyph = { initialGlyph |
-    formGroup <- group [
-                   filled blue <| rect 120 120
-                 ] }
-
-circleGlyph = { initialGlyph |
-    formGroup <- group [
-                   filled yellow <| circle 75
-                 ] }
-
-include : Glyph -> Form
-include glyph = move glyph.pos glyph.formGroup
-
 scratchGlyph = { initialGlyph |
     formGroup <- group [
                    include rectangleGlyph
@@ -81,13 +92,8 @@ scratchGlyph = { initialGlyph |
                      <| include circleGlyph
                  ] }
 
-cursorArrowGlyph = { initialGlyph |
-    formGroup <- scale 0.4 <| group [
-                   filled black <| ngon 3 20
-                 , move (8.25, -15)
-                   <| rotate (degrees 30)
-                   <| filled black <| rect 10 25
-                 ] }
+include : Glyph -> Form
+include glyph = move glyph.pos glyph.formGroup
 
 initialGlyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
 
@@ -107,14 +113,20 @@ updateGlyphTools : Time -> (Int, Int) -> [Glyph] -> [Glyph]
 updateGlyphTools dt (mouseX, mouseY) glyphTools =
   map (\glyph -> updateGlyph dt (mouseX, mouseY) glyph) glyphTools
 
-updateCursor : Time -> (Int, Int) -> Glyph -> Glyph
-updateCursor dt (mouseX, mouseY) glyph =
+updateCursor : Time -> (Int, Int) -> Bool -> Glyph -> Glyph
+updateCursor dt (mouseX, mouseY) mouseDown glyph =
   { glyph | pos <- (toFloat mouseX, toFloat mouseY) }
 
-updateScene : (Time, (Int, Int)) -> Scene -> Scene
-updateScene (dt, mouse) s = { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph
-                                , glyphTools <- updateGlyphTools dt mouse s.glyphTools
-                                , cursor <- updateCursor dt mouse s.cursor }
+updateScene : (Time, (Int, Int), Bool) -> Scene -> Scene
+updateScene (dt, mouse, mouseDown) s =
+  let cur = case mouseDown of
+            True ->
+              cursorHandGlyph
+            False ->
+              cursorArrowGlyph
+  in { s | rootGlyph <- updateGlyph dt mouse s.rootGlyph
+         , glyphTools <- updateGlyphTools dt mouse s.glyphTools
+         , cursor <- updateCursor dt mouse mouseDown cur }
 
 
 render : (Int, Int) -> Scene -> Element
@@ -134,8 +146,9 @@ render (w, h) scene =
 
 
 clock = lift inSeconds (fps 30)
-input = (,) <~ clock
+input = (,,) <~ clock
              ~ lift2 relativeMouse (center <~ (toolbarAdjust <~ Window.dimensions)) Mouse.position
+             ~ Mouse.isDown
 
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
 
