@@ -158,7 +158,7 @@ renderGlyph (entity, entityForm) =
   move entity.pos <| entityForm entity
 
 renderScene scene =
-  [ renderGlyph (head scene.glyphTools) ] -- , renderGlyph scene.cursor ]
+  [ renderGlyph (head scene.glyphTools), renderGlyph scene.cursor ]
 
 renderToolbar { glyphTools } =
   flow down
