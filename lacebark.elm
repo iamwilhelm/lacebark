@@ -65,13 +65,15 @@ rectangleEntity = { initialEntity |
     colr <- orange
   , dim <- (120, 120) }
 
-rectangleEntityForm: Entity -> Form
+rectangleEntityForm : Entity -> Form
 rectangleEntityForm glyph =
   group [
     filled glyph.colr <| uncurry rect glyph.dim
   ]
 
-rectangle = (rectangleEntity, rectangleEntityForm)
+rectangleGlyph = (rectangleEntity, rectangleEntityForm)
+
+
 
 --circleGlyph = { initialGlyph |
 --    formGroup <- group [
@@ -123,7 +125,7 @@ rectangle = (rectangleEntity, rectangleEntityForm)
 
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
-               , glyphTools = [ rectangle ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
+               , glyphTools = [ rectangleGlyph ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
                , cursor = arrowGlyph
                }
 
