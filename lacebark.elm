@@ -43,9 +43,9 @@ rectangle w h colr =
                  colr <- colr
                , dim <- (w, h) }
 
-    entityForm glyph depth =
+    entityForm entity depth =
       group [
-        filled glyph.colr <| uncurry rect glyph.dim
+        filled entity.colr <| uncurry rect entity.dim
       ]
   in
     (entity, entityForm)
@@ -58,12 +58,12 @@ circ : Float -> Color -> Glyph
 circ radius colr =
   let
     entity = { initialEntity |
-        colr <- red
-      , radius <- 60 }
+        colr <- colr
+      , radius <- radius }
 
-    entityForm glyph depth =
+    entityForm entity depth =
       group [
-        filled glyph.colr <| circle glyph.radius
+        filled entity.colr <| circle entity.radius
       ]
   in
     (entity, entityForm)
