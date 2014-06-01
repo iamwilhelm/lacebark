@@ -35,30 +35,41 @@ initialEntity = { pos = (0, 0)
                 }
 
 
-rectangleEntity = { initialEntity |
-    colr <- orange
-  , dim <- (120, 120) }
 
-rectangleEntityForm : Entity -> Int -> Form
-rectangleEntityForm glyph depth =
-  group [
-    filled glyph.colr <| uncurry rect glyph.dim
-  ]
+rectangle : Float -> Float -> Color -> Glyph
+rectangle w h colr =
+  let
+    entity = { initialEntity |
+                 colr <- colr
+               , dim <- (w, h) }
 
-rectangleGlyph = (rectangleEntity, rectangleEntityForm)
+    entityForm glyph depth =
+      group [
+        filled glyph.colr <| uncurry rect glyph.dim
+      ]
+  in
+    (entity, entityForm)
+
+rectangleGlyph = rectangle 120 120 blue
 
 
-circleEntity = { initialEntity |
-    colr <- red
-  , radius <- 60 }
 
-circleEntityForm : Entity -> Int -> Form
-circleEntityForm glyph depth =
-  group [
-    filled glyph.colr <| circle glyph.radius
-  ]
+circ : Float -> Color -> Glyph
+circ radius colr =
+  let
+    entity = { initialEntity |
+        colr <- red
+      , radius <- 60 }
 
-circleGlyph = (circleEntity, circleEntityForm)
+    entityForm glyph depth =
+      group [
+        filled glyph.colr <| circle glyph.radius
+      ]
+  in
+    (entity, entityForm)
+
+circleGlyph = circ 60 red
+
 
 
 arrowEntity = initialEntity
