@@ -34,6 +34,33 @@ initialEntity = { pos = (0, 0)
                 , radius = 75
                 }
 
+
+rectangleEntity = { initialEntity |
+    colr <- orange
+  , dim <- (120, 120) }
+
+rectangleEntityForm : Entity -> Int -> Form
+rectangleEntityForm glyph depth =
+  group [
+    filled glyph.colr <| uncurry rect glyph.dim
+  ]
+
+rectangleGlyph = (rectangleEntity, rectangleEntityForm)
+
+
+circleEntity = { initialEntity |
+    colr <- red
+  , radius <- 60 }
+
+circleEntityForm : Entity -> Int -> Form
+circleEntityForm glyph depth =
+  group [
+    filled glyph.colr <| circle glyph.radius
+  ]
+
+circleGlyph = (circleEntity, circleEntityForm)
+
+
 arrowEntity = initialEntity
 
 arrowEntityForm : Entity -> Int -> Form
@@ -60,31 +87,6 @@ handEntityForm glyph depth =
 
 handGlyph = (handEntity, handEntityForm)
 
-
-rectangleEntity = { initialEntity |
-    colr <- orange
-  , dim <- (120, 120) }
-
-rectangleEntityForm : Entity -> Int -> Form
-rectangleEntityForm glyph depth =
-  group [
-    filled glyph.colr <| uncurry rect glyph.dim
-  ]
-
-rectangleGlyph = (rectangleEntity, rectangleEntityForm)
-
-
-circleEntity = { initialEntity |
-    colr <- red
-  , radius <- 60 }
-
-circleEntityForm : Entity -> Int -> Form
-circleEntityForm glyph depth =
-  group [
-    filled glyph.colr <| circle glyph.radius
-  ]
-
-circleGlyph = (circleEntity, circleEntityForm)
 
 
 
