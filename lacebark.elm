@@ -74,13 +74,20 @@ rectangleEntityForm glyph =
 rectangleGlyph = (rectangleEntity, rectangleEntityForm)
 
 
+circleEntity = { initialEntity |
+    colr <- red
+  , radius <- 60 }
 
---circleGlyph = { initialGlyph |
---    formGroup <- group [
---                   filled yellow <| circle 75
---                 ] }
---
---
+circleEntityForm : Entity -> Form
+circleEntityForm glyph =
+  group [
+    filled glyph.colr <| circle glyph.radius
+  ]
+
+circleGlyph = (circleEntity, circleEntityForm)
+
+
+
 --clubGlyph = { initialGlyph |
 --    formGroup <- group [
 --                   move (0, 60)
@@ -125,7 +132,7 @@ rectangleGlyph = (rectangleEntity, rectangleEntityForm)
 
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
-               , glyphTools = [ rectangleGlyph ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
+               , glyphTools = [ rectangleGlyph, circleGlyph ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
                , cursor = arrowGlyph
                }
 
