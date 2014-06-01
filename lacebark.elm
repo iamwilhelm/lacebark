@@ -160,17 +160,17 @@ renderGlyph (entity, entityForm) =
 renderScene scene =
   [ renderGlyph (head scene.glyphTools) ] -- , renderGlyph scene.cursor ]
 
---renderToolbar { camera, glyphTools } =
---  flow down
---  <| map (\glyph -> collage 80 80 [scale 0.2 <| renderGlyph glyph !missing glyphForm! ]) glyphTools
+renderToolbar { glyphTools } =
+  flow down
+  <| map (\glyph -> collage 80 80 [scale 0.2 <| renderGlyph glyph ]) glyphTools
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
   color lightGray
     <| container w h middle
     <| flow right [
-         -- renderToolbar scene
-         color gray <| collage 1024 600 <| renderScene scene
+         renderToolbar scene
+       , color gray <| collage 1024 600 <| renderScene scene
        ]
 
 
