@@ -25,19 +25,19 @@ toolbarAdjust (x, y) = (x + 80, y)
 type Entity = { pos: Vec, vel: Vec, rad: Float, colr: Color, dim: Vec, radius: Float }
 type Glyph = (Entity, Entity -> Form)
 
-initialGlyph = { pos = (0, 0)
-               , vel = (0, 0)
-               , rad = 0
+initialEntity = { pos = (0, 0)
+                , vel = (0, 0)
+                , rad = 0
 
-               , colr = blue
-               , dim = (10, 10)
-               , radius = 75
-               }
+                , colr = blue
+                , dim = (10, 10)
+                , radius = 75
+                }
 
-cursorArrowGlyph = initialGlyph
+cursorArrowEntity = initialEntity
 
-cursorArrowGlyphForm : Entity -> Form
-cursorArrowGlyphForm glyph =
+cursorArrowEntityForm : Entity -> Form
+cursorArrowEntityForm glyph =
   scale 0.4
   <| group [
        filled black <| ngon 3 20
@@ -46,32 +46,32 @@ cursorArrowGlyphForm glyph =
        <| filled black <| rect 10 25
      ]
 
-cursorArrow = (cursorArrowGlyph, cursorArrowGlyphForm)
+cursorArrow = (cursorArrowEntity, cursorArrowEntityForm)
 
 
-cursorHandGlyph = initialGlyph
+cursorHandEntity = initialEntity
 
-cursorHandGlyphForm : Entity -> Form
-cursorHandGlyphForm glyph =
+cursorHandEntityForm : Entity -> Form
+cursorHandEntityForm glyph =
   scale 0.4
   <| group [
        filled black <| circle 20
      ]
 
-cursorHand = (cursorHandGlyph, cursorHandGlyphForm)
+cursorHand = (cursorHandEntity, cursorHandEntityForm)
 
 
-rectangleGlyph = { initialGlyph |
+rectangleEntity = { initialEntity |
     colr <- orange
   , dim <- (120, 120) }
 
-rectangleGlyphForm: Entity -> Form
-rectangleGlyphForm glyph =
+rectangleEntityForm: Entity -> Form
+rectangleEntityForm glyph =
   group [
     filled glyph.colr <| uncurry rect glyph.dim
   ]
 
-rectangle = (rectangleGlyph, rectangleGlyphForm)
+rectangle = (rectangleEntity, rectangleEntityForm)
 
 --circleGlyph = { initialGlyph |
 --    formGroup <- group [
