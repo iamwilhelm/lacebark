@@ -34,10 +34,10 @@ initialEntity = { pos = (0, 0)
                 , radius = 75
                 }
 
-cursorArrowEntity = initialEntity
+arrowEntity = initialEntity
 
-cursorArrowEntityForm : Entity -> Form
-cursorArrowEntityForm glyph =
+arrowEntityForm : Entity -> Form
+arrowEntityForm glyph =
   scale 0.4
   <| group [
        filled black <| ngon 3 20
@@ -46,19 +46,19 @@ cursorArrowEntityForm glyph =
        <| filled black <| rect 10 25
      ]
 
-cursorArrow = (cursorArrowEntity, cursorArrowEntityForm)
+arrowGlyph = (arrowEntity, arrowEntityForm)
 
 
-cursorHandEntity = initialEntity
+handEntity = initialEntity
 
-cursorHandEntityForm : Entity -> Form
-cursorHandEntityForm glyph =
+handEntityForm : Entity -> Form
+handEntityForm glyph =
   scale 0.4
   <| group [
        filled black <| circle 20
      ]
 
-cursorHand = (cursorHandEntity, cursorHandEntityForm)
+handGlyph = (handEntity, handEntityForm)
 
 
 rectangleEntity = { initialEntity |
@@ -124,7 +124,7 @@ rectangle = (rectangleEntity, rectangleEntityForm)
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
                , glyphTools = [ rectangle ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
-               , cursor = cursorArrow
+               , cursor = arrowGlyph
                }
 
 
@@ -146,9 +146,9 @@ updateScene : (Time, (Int, Int), Bool) -> Scene -> Scene
 updateScene (dt, mouse, mouseDown) scene =
   let cur = case mouseDown of
             True ->
-              cursorHand
+              handGlyph
             False ->
-              cursorArrow
+              arrowGlyph
   in { scene | glyphTools <- updateGlyphTools dt mouse scene.glyphTools
              , cursor <- updateCursor dt mouse mouseDown cur }
 
