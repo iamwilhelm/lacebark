@@ -117,22 +117,28 @@ circleGlyph = (circleEntity, circleEntityForm)
 --diamondGlyph = { initialGlyph |
 --    formGroup <- group [ filled red <| ngon 4 80 ] }
 --
---scratchGlyph = { initialGlyph |
---    formGroup <- group [
---                   include clubGlyph
---                 ,
---                   move (80, 80)
---                     <| include heartGlyph
---                 ] }
---
---include : Glyph -> Form
---include glyph = move glyph.pos glyph.formGroup
 
+include : Glyph -> Form
+include (entity, entityForm) = move entity.pos <| entityForm entity
+
+scratchEntity = { initialEntity |
+  colr <- yellow }
+
+scratchEntityForm : Entity -> Form
+scratchEntityForm glyph =
+  group [
+    include rectangleGlyph
+  ,
+    move (80, 80)
+      <| include circleGlyph
+  ]
+
+scratchGlyph = (scratchEntity, scratchEntityForm)
 
 
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
-               , glyphTools = [ rectangleGlyph, circleGlyph ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
+               , glyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph ]
                , cursor = arrowGlyph
                }
 
