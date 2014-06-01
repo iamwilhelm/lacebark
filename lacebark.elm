@@ -99,20 +99,31 @@ handEntityForm glyph depth =
 handGlyph = (handEntity, handEntityForm)
 
 
+club : Color -> Glyph
+club colr =
+  let
+    entity =
+      { initialEntity |
+          colr <- colr }
+
+    entityForm glyph depth =
+      group [
+        move (0, 60)
+          <| include (circ 40 entity.colr)
+      , move (35, 0)
+          <| include (circ 40 entity.colr)
+      , move (-35, 0)
+          <| include (circ 40 entity.colr)
+      , move (0, -35)
+          <| include (rectangle 20 80 glyph.colr)
+      ]
+  in
+    (entity, entityForm)
+
+clubGlyph = club charcoal
 
 
---clubGlyph = { initialGlyph |
---    formGroup <- group [
---                   move (0, 60)
---                     <| filled charcoal <| circle 40
---                 , move (35, 0)
---                     <| filled charcoal <| circle 40
---                 , move (-35, 0)
---                     <| filled charcoal <| circle 40
---                 , move (0, -35)
---                     <| filled charcoal <| rect 20 80
---                 ] }
---
+
 --heartGlyph = { initialGlyph |
 --    formGroup <- group [
 --                   move (30, 30)
@@ -129,7 +140,7 @@ handGlyph = (handEntity, handEntityForm)
 --
 --diamondGlyph = { initialGlyph |
 --    formGroup <- group [ filled red <| ngon 4 80 ] }
---
+
 
 include : Glyph -> Form
 include (entity, entityForm) =
@@ -165,7 +176,7 @@ scratchGlyph = (scratchEntity, scratchEntityForm)
 
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
-               , glyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph ]
+               , glyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph, clubGlyph ]
                , cursor = arrowGlyph
                }
 
