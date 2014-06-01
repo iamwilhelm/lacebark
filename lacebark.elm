@@ -22,7 +22,8 @@ toolbarAdjust (x, y) = (x + 80, y)
 
 
 -- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
-type Glyph = { pos: Vec, vel: Vec, rad: Float, colr: Color, dim: Vec, radius: Float }
+type Entity = { pos: Vec, vel: Vec, rad: Float, colr: Color, dim: Vec, radius: Float }
+type Glyph = (Entity, Entity -> Form)
 
 initialGlyph = { pos = (0, 0)
                , vel = (0, 0)
@@ -35,7 +36,7 @@ initialGlyph = { pos = (0, 0)
 
 cursorArrowGlyph = initialGlyph
 
-cursorArrowGlyphForm : Glyph -> Form
+cursorArrowGlyphForm : Entity -> Form
 cursorArrowGlyphForm glyph =
   scale 0.4
   <| group [
@@ -50,7 +51,7 @@ cursorArrow = (cursorArrowGlyph, cursorArrowGlyphForm)
 
 cursorHandGlyph = initialGlyph
 
-cursorHandGlyphForm : Glyph -> Form
+cursorHandGlyphForm : Entity -> Form
 cursorHandGlyphForm glyph =
   scale 0.4
   <| group [
@@ -64,7 +65,7 @@ rectangleGlyph = { initialGlyph |
     colr <- orange
   , dim <- (120, 120) }
 
-rectangleGlyphForm: Glyph -> Form
+rectangleGlyphForm: Entity -> Form
 rectangleGlyphForm glyph =
   group [
     filled glyph.colr <| uncurry rect glyph.dim
@@ -120,26 +121,26 @@ rectangle = (rectangleGlyph, rectangleGlyphForm)
 
 
 
-type Scene = { camera: Float, glyphTools: [(Glyph, Glyph -> Form)], cursor: (Glyph, Glyph -> Form) }
+type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
                , glyphTools = [ rectangle ] --, scratchGlyph, circleGlyph, clubGlyph, heartGlyph, diamondGlyph ]
                , cursor = cursorArrow
                }
 
 
-updateGlyph : Time -> (Int, Int) -> (Glyph, Glyph -> Form) -> (Glyph, Glyph -> Form)
-updateGlyph dt (mouseX, mouseY) (glyph, glyphForm) = ({ glyph |
-    pos <- vecAdd glyph.pos <| vecMulS glyph.vel dt
+updateGlyph : Time -> (Int, Int) -> Glyph -> Glyph
+updateGlyph dt (mouseX, mouseY) (entity, entityForm) = ({ entity |
+    pos <- vecAdd entity.pos <| vecMulS entity.vel dt
   },
-  glyphForm)
+  entityForm)
 
-updateGlyphTools : Time -> (Int, Int) -> [(Glyph, Glyph -> Form)] -> [(Glyph, Glyph -> Form)]
+updateGlyphTools : Time -> (Int, Int) -> [Glyph] -> [Glyph]
 updateGlyphTools dt (mouseX, mouseY) glyphTools =
   map (\glyph -> updateGlyph dt (mouseX, mouseY) glyph) glyphTools
 
-updateCursor : Time -> (Int, Int) -> Bool -> (Glyph, Glyph -> Form) -> (Glyph, Glyph -> Form)
-updateCursor dt (mouseX, mouseY) mouseDown (glyph, glyphForm) =
-  ({ glyph | pos <- (toFloat mouseX, toFloat mouseY) }, glyphForm)
+updateCursor : Time -> (Int, Int) -> Bool -> Glyph -> Glyph
+updateCursor dt (mouseX, mouseY) mouseDown (entity, entityForm) =
+  ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
 
 updateScene : (Time, (Int, Int), Bool) -> Scene -> Scene
 updateScene (dt, mouse, mouseDown) scene =
@@ -153,8 +154,8 @@ updateScene (dt, mouse, mouseDown) scene =
 
 
 
-renderGlyph (glyph, glyphform) =
-  move glyph.pos <| glyphform glyph
+renderGlyph (entity, entityForm) =
+  move entity.pos <| entityForm entity
 
 renderScene scene =
   [ renderGlyph (head scene.glyphTools) ] -- , renderGlyph scene.cursor ]
