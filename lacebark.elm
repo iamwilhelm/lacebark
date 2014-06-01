@@ -23,7 +23,7 @@ toolbarAdjust (x, y) = (x + 80, y)
 
 -- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
 type Entity = { pos: Vec, vel: Vec, rad: Float, colr: Color, dim: Vec, radius: Float }
-type Glyph = (Entity, Entity -> Form)
+type Glyph = (Entity, Entity -> Int -> Form)
 
 initialEntity = { pos = (0, 0)
                 , vel = (0, 0)
@@ -36,8 +36,8 @@ initialEntity = { pos = (0, 0)
 
 arrowEntity = initialEntity
 
-arrowEntityForm : Entity -> Form
-arrowEntityForm glyph =
+arrowEntityForm : Entity -> Int -> Form
+arrowEntityForm glyph depth =
   scale 0.4
   <| group [
        filled black <| ngon 3 20
@@ -51,8 +51,8 @@ arrowGlyph = (arrowEntity, arrowEntityForm)
 
 handEntity = initialEntity
 
-handEntityForm : Entity -> Form
-handEntityForm glyph =
+handEntityForm : Entity -> Int -> Form
+handEntityForm glyph depth =
   scale 0.4
   <| group [
        filled black <| circle 20
@@ -65,8 +65,8 @@ rectangleEntity = { initialEntity |
     colr <- orange
   , dim <- (120, 120) }
 
-rectangleEntityForm : Entity -> Form
-rectangleEntityForm glyph =
+rectangleEntityForm : Entity -> Int -> Form
+rectangleEntityForm glyph depth =
   group [
     filled glyph.colr <| uncurry rect glyph.dim
   ]
@@ -78,8 +78,8 @@ circleEntity = { initialEntity |
     colr <- red
   , radius <- 60 }
 
-circleEntityForm : Entity -> Form
-circleEntityForm glyph =
+circleEntityForm : Entity -> Int -> Form
+circleEntityForm glyph depth =
   group [
     filled glyph.colr <| circle glyph.radius
   ]
@@ -119,21 +119,35 @@ circleGlyph = (circleEntity, circleEntityForm)
 --
 
 include : Glyph -> Form
-include (entity, entityForm) = move entity.pos <| entityForm entity
+include (entity, entityForm) =
+  -- renderGlyph (entity entityForm)
+  move entity.pos <| entityForm entity 10
+
+rinclude : Glyph -> Int -> Form
+rinclude (entity, entityForm) depth =
+  case depth of
+    0 ->
+      group []
+    _ ->
+      group [ entityForm entity (depth - 1) ]
+
 
 scratchEntity = { initialEntity |
   colr <- yellow }
 
-scratchEntityForm : Entity -> Form
-scratchEntityForm glyph =
+scratchEntityForm : Entity -> Int -> Form
+scratchEntityForm entity depth =
   group [
     include rectangleGlyph
   ,
-    move (80, 80)
-      <| include circleGlyph
+    rotate (degrees 30)
+    <| scale 0.7
+    <| move (80, 80)
+    <| rinclude (scratchEntity, scratchEntityForm) depth
   ]
 
 scratchGlyph = (scratchEntity, scratchEntityForm)
+
 
 
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
@@ -168,9 +182,9 @@ updateScene (dt, mouse, mouseDown) scene =
              , cursor <- updateCursor dt mouse mouseDown cur }
 
 
-
+renderGlyph : Glyph -> Form
 renderGlyph (entity, entityForm) =
-  move entity.pos <| entityForm entity
+  move entity.pos <| entityForm entity 10
 
 renderScene scene =
   [ renderGlyph (head scene.glyphTools), renderGlyph scene.cursor ]
@@ -195,36 +209,4 @@ input = (,,) <~ clock
              ~ Mouse.isDown
 
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
-
-
--- 
---recursiveIncludeScene scene transform transform2 depth =
---  group
---    <| ([scene]
---          ++ case depth of
---               1 ->
---                 []
---               _ ->
---                 [
---                   transform
---                     (recursiveIncludeScene scene transform transform2 (depth - 1))
---                 , transform2
---                     (recursiveIncludeScene scene transform transform2 (depth - 1))
---                 ]
---       )
---
---scratchScene (mouseX, mouseY) =
---  [
---    recursiveIncludeScene
---      --(group <| diamondScene (mouseX, mouseY))
---      (filled red <| ngon 4 40)
---      (move (toFloat mouseX / 3, toFloat mouseY / 3) . rotate (degrees <| toFloat mouseX) . scale 0.8)
---      (move (toFloat mouseX / 3 - 80, toFloat mouseY / 3 - 80) . rotate (degrees <| toFloat mouseY) . scale 0.7)
---      8
---
---  -- , move (toFloat mouseX, toFloat mouseY)
---  --     (rectangle 50 50 green)
---  --, toForm (asText "hello world")
---
---  ]
 
