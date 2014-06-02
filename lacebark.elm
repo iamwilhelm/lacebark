@@ -21,7 +21,8 @@ toolbarAdjust: (Int, Int) -> (Int, Int)
 toolbarAdjust (x, y) = (x + 80, y)
 
 
--- a glyph is a combination of shapes. glyph can be composed of many other shapes or itself 
+-- a glyph is a combination of shapes. glyph can be composed of many other
+-- shapes or itself 
 type Entity = { pos: Vec, vel: Vec, rad: Float, colr: Color, dim: Vec, radius: Float }
 type Glyph = (Entity, Entity -> Int -> Form)
 
@@ -229,7 +230,10 @@ render (w, h) scene =
 
 clock = lift inSeconds (fps 30)
 input = (,,) <~ clock
-             ~ lift2 relativeMouse (center <~ (toolbarAdjust <~ Window.dimensions)) Mouse.position
+             ~ sampleOn clock
+               (lift2 relativeMouse
+                      (center <~ (toolbarAdjust <~ Window.dimensions))
+                      Mouse.position)
              ~ Mouse.isDown
 
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
