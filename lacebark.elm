@@ -180,27 +180,40 @@ rinclude (entity, entityForm) depth =
       group [ entityForm entity (depth - 1) ]
 
 
-scratchEntity = { initialEntity |
-  colr <- yellow }
+tentacleGlyph =
+  let
+    entity = { initialEntity |
+      colr <- yellow }
 
-scratchEntityForm : Entity -> Int -> Form
-scratchEntityForm entity depth =
-  group [
-    include rectangleGlyph
-  ,
-    rotate (degrees 30)
-    <| scale 0.7
-    <| move (80, 80)
-    <| rinclude (scratchEntity, scratchEntityForm) depth
-  ]
+    entityForm : Entity -> Int -> Form
+    entityForm entity depth =
+      group [
+        include rectangleGlyph
+      ,
+        rotate (degrees 30)
+        <| scale 0.7
+        <| move (80, 80)
+        <| rinclude tentacleGlyph depth
+      ]
+  in
+    (entity, entityForm)
 
-scratchGlyph = (scratchEntity, scratchEntityForm)
 
-
+scratchGlyph =
+  let
+    entity = initialEntity
+    entityForm entity depth =
+      group [
+        include rectangleGlyph
+      , move (100, 100) <| include circleGlyph
+      , move (-150, 50) <| include clubGlyph
+      ]
+  in
+    (entity, entityForm)
 
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
-               , glyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph, clubGlyph ]
+               , glyphTools = [ scratchGlyph, tentacleGlyph, rectangleGlyph, circleGlyph, clubGlyph ]
                , cursor = openPawGlyph
                }
 
