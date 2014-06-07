@@ -1,5 +1,6 @@
 import Window
 import Mouse
+import Keyboard
 import Transform2D
 
 type Vec = (Float, Float)
@@ -228,30 +229,32 @@ initialScene = {
   , cursor = openPawGlyph
   }
 
+updateGlyph : AppInput -> Glyph -> Glyph
+updateGlyph (dt, _, _, _) (entity, entityForm) =
+  ({ entity |
+     pos <- vecAdd entity.pos <| vecMulS entity.vel dt
+   },
+   entityForm)
 
-updateGlyph : Time -> (Int, Int) -> Glyph -> Glyph
-updateGlyph dt (mouseX, mouseY) (entity, entityForm) = ({ entity |
-    pos <- vecAdd entity.pos <| vecMulS entity.vel dt
-  },
-  entityForm)
+updateGlyphTools : AppInput -> [Glyph] -> [Glyph]
+updateGlyphTools appInput glyphTools =
+  map (\glyph -> updateGlyph appInput glyph) glyphTools
 
-updateGlyphTools : Time -> (Int, Int) -> [Glyph] -> [Glyph]
-updateGlyphTools dt (mouseX, mouseY) glyphTools =
-  map (\glyph -> updateGlyph dt (mouseX, mouseY) glyph) glyphTools
+updateCursor : AppInput -> Glyph -> Glyph
+updateCursor (_, (mouseX, mouseY), mouseDown, _) _ =
+  let (entity, entityForm) =
+    case mouseDown of
+      True ->
+        closedPawGlyph
+      False ->
+        openPawGlyph
+  in
+    ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
 
-updateCursor : Time -> (Int, Int) -> Bool -> Glyph -> Glyph
-updateCursor dt (mouseX, mouseY) mouseDown (entity, entityForm) =
-  ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
-
-updateScene : (Time, (Int, Int), Bool) -> Scene -> Scene
-updateScene (dt, mouse, mouseDown) scene =
-  let cur = case mouseDown of
-            True ->
-              closedPawGlyph
-            False ->
-              openPawGlyph
-  in { scene | glyphTools <- updateGlyphTools dt mouse scene.glyphTools
-             , cursor <- updateCursor dt mouse mouseDown cur }
+updateScene : AppInput -> Scene -> Scene
+updateScene appInput scene =
+  { scene | glyphTools <- updateGlyphTools appInput scene.glyphTools
+          , cursor <- updateCursor appInput scene.cursor }
 
 
 renderGlyph : Glyph -> Form
@@ -280,14 +283,15 @@ render (w, h) scene =
        , color gray <| collage 1024 600 <| renderScene scene
        ]
 
+type AppInput = (Time, (Int, Int), Bool, { x: Int, y: Int })
 
-clock = lift inSeconds (fps 30)
-input = (,,) <~ clock
-             ~ sampleOn clock
+clockInput = lift inSeconds (fps 30)
+mouseInput = sampleOn clockInput
                (lift2 relativeMouse
                       (center <~ (toolbarAdjust <~ Window.dimensions))
                       Mouse.position)
-             ~ Mouse.isDown
+keyInput = Keyboard.wasd
+input = (,,,) <~ clockInput ~ mouseInput ~ Mouse.isDown ~ keyInput
 
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
 
