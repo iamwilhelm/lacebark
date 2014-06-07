@@ -54,7 +54,6 @@ rectangle w h colr =
 rectangleGlyph = rectangle 120 120 blue
 
 
-
 circ : Float -> Color -> Glyph
 circ radius colr =
   let
@@ -72,32 +71,56 @@ circ radius colr =
 circleGlyph = circ 60 red
 
 
+arrowGlyph =
+  let
+    entity = initialEntity
 
-arrowEntity = initialEntity
-
-arrowEntityForm : Entity -> Int -> Form
-arrowEntityForm glyph depth =
-  scale 0.4
-  <| group [
-       filled black <| ngon 3 20
-     , move (8.25, -15)
-       <| rotate (degrees 30)
-       <| filled black <| rect 10 25
-     ]
-
-arrowGlyph = (arrowEntity, arrowEntityForm)
+    entityForm : Entity -> Int -> Form
+    entityForm glyph depth =
+      group [
+        filled black <| ngon 3 20
+      , move (8.25, -15)
+        <| rotate (degrees 30)
+        <| filled black <| rect 10 25
+      ]
+  in
+    (entity, entityForm)
 
 
-handEntity = initialEntity
+openPawGlyph =
+  let
+    entity = initialEntity
 
-handEntityForm : Entity -> Int -> Form
-handEntityForm glyph depth =
-  scale 0.4
-  <| group [
-       filled black <| circle 20
-     ]
+    entityForm : Entity -> Int -> Form
+    entityForm glyph depth =
+      group [
+        include (circ 18 black)
+      , rotate (degrees -25)
+        <| group <| map (\ang ->
+                      rotate (degrees ang) <| group [ move (0, 23) <| include (circ 7.5 black) ]
+                    ) [-45, 0, 45]
+      , rotate (degrees 85) <| group [ move (0, 23) <| include (circ 7.5 black) ]
+      ]
+  in
+    (entity, entityForm)
 
-handGlyph = (handEntity, handEntityForm)
+closedPawGlyph =
+  let
+    entity = initialEntity
+
+    entityForm : Entity -> Int -> Form
+    entityForm glyph depth =
+      group [
+        include (circ 18 black)
+      , rotate (degrees -25)
+        <| group <| map (\ang ->
+                      rotate (degrees ang) <| group [ move (0, 17) <| include (circ 7.5 black) ]
+                    ) [-45, 0, 45]
+      , rotate (degrees 80) <| group [ move (0, 17) <| include (circ 7.5 black) ]
+      ]
+  in
+    (entity, entityForm)
+
 
 
 club : Color -> Glyph
@@ -178,7 +201,7 @@ scratchGlyph = (scratchEntity, scratchEntityForm)
 type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
 initialScene = { camera = 0
                , glyphTools = [ scratchGlyph, rectangleGlyph, circleGlyph, clubGlyph ]
-               , cursor = arrowGlyph
+               , cursor = openPawGlyph
                }
 
 
@@ -200,9 +223,9 @@ updateScene : (Time, (Int, Int), Bool) -> Scene -> Scene
 updateScene (dt, mouse, mouseDown) scene =
   let cur = case mouseDown of
             True ->
-              handGlyph
+              closedPawGlyph
             False ->
-              arrowGlyph
+              openPawGlyph
   in { scene | glyphTools <- updateGlyphTools dt mouse scene.glyphTools
              , cursor <- updateCursor dt mouse mouseDown cur }
 
@@ -211,8 +234,14 @@ renderGlyph : Glyph -> Form
 renderGlyph (entity, entityForm) =
   move entity.pos <| entityForm entity 10
 
+renderCursor : Glyph -> Form
+renderCursor (entity, entityForm) =
+  move entity.pos <| scale 0.5 <| entityForm entity 10
+
 renderScene scene =
-  [ renderGlyph (head scene.glyphTools), renderGlyph scene.cursor ]
+  [ renderGlyph (head scene.glyphTools)
+  , renderCursor scene.cursor
+  ]
 
 renderToolbar { glyphTools } =
   flow down
