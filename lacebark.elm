@@ -1,5 +1,6 @@
 import Window
 import Mouse
+import Transform2D
 
 type Vec = (Float, Float)
 
@@ -211,11 +212,21 @@ scratchGlyph =
   in
     (entity, entityForm)
 
-type Scene = { camera: Float, glyphTools: [Glyph], cursor: Glyph }
-initialScene = { camera = 0
-               , glyphTools = [ scratchGlyph, tentacleGlyph, rectangleGlyph, circleGlyph, clubGlyph ]
-               , cursor = openPawGlyph
-               }
+type Camera = Entity
+initialCamera = initialEntity
+
+throughCamera camera forms =
+  let
+    transform = Transform2D.translation (fst camera.pos) (snd camera.pos)
+  in
+    groupTransform transform forms 
+
+type Scene = { camera: Camera, glyphTools: [Glyph], cursor: Glyph }
+initialScene = {
+    camera = initialCamera
+  , glyphTools = [ scratchGlyph, tentacleGlyph, rectangleGlyph, circleGlyph, clubGlyph ]
+  , cursor = openPawGlyph
+  }
 
 
 updateGlyph : Time -> (Int, Int) -> Glyph -> Glyph
@@ -252,7 +263,7 @@ renderCursor (entity, entityForm) =
   move entity.pos <| scale 0.5 <| entityForm entity 10
 
 renderScene scene =
-  [ renderGlyph (head scene.glyphTools)
+  [ throughCamera scene.camera [renderGlyph (head scene.glyphTools)]
   , renderCursor scene.cursor
   ]
 
