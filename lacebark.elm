@@ -243,11 +243,10 @@ updateGlyphTools appInput glyphTools =
 updateCursor : AppInput -> Glyph -> Glyph
 updateCursor (_, (mouseX, mouseY), mouseDown, _) _ =
   let (entity, entityForm) =
-    case mouseDown of
-      True ->
-        closedPawGlyph
-      False ->
-        openPawGlyph
+    if mouseDown == True then
+      closedPawGlyph
+    else
+      openPawGlyph
   in
     ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
 
