@@ -15,9 +15,8 @@ center (w, h) = (div w 2 , div h 2)
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 
--- a hack to correct for width of toolbar
-toolbarAdjust: (Int, Int) -> (Int, Int)
-toolbarAdjust (x, y) = (x + 80, y)
+toolbarHack: (Int, Int) -> (Int, Int)
+toolbarHack (x, y) = (x + 80, y)
 
 type Camera = Entity
 initialCamera = initialEntity
@@ -103,7 +102,7 @@ type AppInput = (Time, (Int, Int), Bool, { x: Int, y: Int })
 clockInput = lift inSeconds (fps 30)
 mouseInput = sampleOn clockInput
                (lift2 relativeMouse
-                      (center <~ (toolbarAdjust <~ Window.dimensions))
+                      (center <~ (toolbarHack <~ Window.dimensions))
                       Mouse.position)
 keyInput = Keyboard.wasd
 input = (,,,) <~ clockInput ~ mouseInput ~ Mouse.isDown ~ keyInput
