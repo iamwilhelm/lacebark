@@ -5,7 +5,7 @@ import Vec
 type Entity = {
     pos: Vec.Vec
   , vel: Vec.Vec
-  , rad: Float
+  , rot: Float
   , colr: Color
   , dim: Vec.Vec
   , radius: Float
@@ -13,7 +13,7 @@ type Entity = {
 
 initialEntity = { pos = (0, 0)
                 , vel = (0, 0)
-                , rad = 0
+                , rot = 0
 
                 , colr = blue
                 , dim = (10, 10)

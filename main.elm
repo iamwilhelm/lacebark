@@ -8,6 +8,12 @@ import Entity (..)
 import Glyph
 
 ----- Graphics pipeline
+-- Frame coords
+-- Glyph coords
+-- World coords
+-- Camera coords
+-- Viewport coords
+-- Window coords
 
 center : (Int, Int) -> (Int, Int)
 center (w, h) = (div w 2 , div h 2)
@@ -21,14 +27,9 @@ toolbarHack (x, y) = (x + 80, y)
 type Camera = Entity
 initialCamera = initialEntity
 
-throughCamera camera forms =
-  let
-    transform = Transform2D.translation (fst camera.pos) (snd camera.pos)
-  in
-    groupTransform transform forms 
 
-
-
+-- TODO Scene and tools overlay and cursor overlay should all be inserted in
+-- different parts of the graphics transformation pipeline
 type Scene = { camera: Camera, glyphTools: [Glyph.Glyph], cursor: Glyph.Glyph }
 initialScene = {
     camera = initialCamera
@@ -71,22 +72,35 @@ updateScene appInput scene =
           , cursor <- updateCursor appInput scene.cursor }
 
 
-renderGlyph : Glyph.Glyph -> Form
-renderGlyph (entity, entityForm) =
-  move entity.pos <| entityForm entity 10
+-- graphics transformation pipeline
+
+glyph2World : Glyph.Glyph -> Transform2D.Transform2D
+glyph2World (entity, entityForm) =
+  Transform2D.multiply
+    (Transform2D.translation (fst entity.pos) (snd entity.pos))
+    (Transform2D.rotation (degrees entity.rot))
+
+world2Camera: Camera -> Transform2D.Transform2D
+world2Camera camera =
+  Transform2D.translation (fst camera.pos) (snd camera.pos)
+
+renderScene : Scene -> Form
+renderScene scene =
+  group <| map (\glyph ->
+      groupTransform
+        (Transform2D.multiply (world2Camera scene.camera) (glyph2World glyph))
+        [Glyph.draw glyph]
+    )
+    [head scene.glyphTools]
+
+renderToolbar { glyphTools } =
+  flow down
+  <| map (\glyph -> collage 80 80 [scale 0.2 <| Glyph.draw glyph ]) glyphTools
 
 renderCursor : Glyph.Glyph -> Form
 renderCursor (entity, entityForm) =
   move entity.pos <| scale 0.5 <| entityForm entity 10
 
-renderScene scene =
-  [ throughCamera scene.camera [renderGlyph (head scene.glyphTools)]
-  , renderCursor scene.cursor
-  ]
-
-renderToolbar { glyphTools } =
-  flow down
-  <| map (\glyph -> collage 80 80 [scale 0.2 <| renderGlyph glyph ]) glyphTools
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
@@ -94,8 +108,14 @@ render (w, h) scene =
     <| container w h middle
     <| flow right [
          renderToolbar scene
-       , color gray <| collage 1024 600 <| renderScene scene
+       , color gray <| collage 1024 600
+         [
+           renderScene scene
+         , renderCursor scene.cursor
+         ]
        ]
+
+----- All signals and input into the program
 
 type AppInput = (Time, (Int, Int), Bool, { x: Int, y: Int })
 

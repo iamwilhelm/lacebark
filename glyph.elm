@@ -5,6 +5,11 @@ import Entity (..)
 -- a glyph is a combination of shapes. glyph can be composed of many other
 type Glyph = (Entity, Entity -> Int -> Form)
 
+-- drawing functions without coordinate transforms
+
+draw: Glyph -> Form
+draw (entity, entityForm) =
+  entityForm entity 10
 
 -- generic 'language' constructs
 
