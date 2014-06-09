@@ -21,9 +21,6 @@ center (w, h) = (div w 2 , div h 2)
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 
-toolbarHack: (Int, Int) -> (Int, Int)
-toolbarHack (x, y) = (x + 80, y)
-
 type Camera = Entity
 initialCamera = initialEntity
 
@@ -93,24 +90,26 @@ renderScene scene =
     )
     [head scene.glyphTools]
 
-renderToolbar { glyphTools } =
-  flow down
-  <| map (\glyph -> collage 80 80 [scale 0.2 <| Glyph.draw glyph ]) glyphTools
-
 renderCursor : Glyph.Glyph -> Form
 renderCursor (entity, entityForm) =
   move entity.pos <| scale 0.5 <| entityForm entity 10
 
+
+renderToolbar { glyphTools } =
+  flow down
+  <| map (\glyph -> collage 50 50 [scale 0.15 <| Glyph.draw glyph ]) glyphTools
+
+
+windowDim = (1024, 600)
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
   color lightGray
     <| container w h middle
     <| flow right [
-         renderToolbar scene
-       , color gray <| collage 1024 600
-         [
-           renderScene scene
+         color gray <| collage (fst windowDim) (snd windowDim) [
+           move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
+         , renderScene scene
          , renderCursor scene.cursor
          ]
        ]
@@ -122,7 +121,7 @@ type AppInput = (Time, (Int, Int), Bool, { x: Int, y: Int })
 clockInput = lift inSeconds (fps 30)
 mouseInput = sampleOn clockInput
                (lift2 relativeMouse
-                      (center <~ (toolbarHack <~ Window.dimensions))
+                      (center <~ Window.dimensions)
                       Mouse.position)
 keyInput = Keyboard.wasd
 input = (,,,) <~ clockInput ~ mouseInput ~ Mouse.isDown ~ keyInput
