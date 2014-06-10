@@ -63,9 +63,21 @@ updateCursor (_, (mouseX, mouseY), mouseDown, _) _ =
   in
     ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
 
+updateCamera : AppInput -> Camera -> Camera
+updateCamera (dt, _, _, keyDir) camera =
+  let
+    new_vec = Vec.mulS (toFloat keyDir.x, toFloat keyDir.y) 150
+    new_pos = Vec.add camera.pos <| Vec.mulS camera.vel dt
+  in
+    { camera |
+        pos <- new_pos
+      , vel <- new_vec
+    }
+
 updateScene : AppInput -> Scene -> Scene
 updateScene appInput scene =
-  { scene | glyphTools <- updateGlyphTools appInput scene.glyphTools
+  { scene | camera <- updateCamera appInput scene.camera
+          , glyphTools <- updateGlyphTools appInput scene.glyphTools
           , cursor <- updateCursor appInput scene.cursor }
 
 
