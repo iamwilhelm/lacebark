@@ -24,10 +24,18 @@ relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 type Camera = Entity
 initialCamera = initialEntity
 
+type Axes = Entity
+initialAxes = initialEntity
 
 -- TODO Scene and tools overlay and cursor overlay should all be inserted in
 -- different parts of the graphics transformation pipeline
-type Scene = { camera: Camera, glyphTools: [Glyph.Glyph], cursor: Glyph.Glyph }
+type Scene = {
+    camera: Camera
+  , glyphTools: [Glyph.Glyph]
+  , cursor: Glyph.Glyph
+  , axes: Axes
+  }
+
 initialScene = {
     camera = initialCamera
   , glyphTools = [
@@ -40,6 +48,7 @@ initialScene = {
     , Glyph.diamondGlyph
     ]
   , cursor = Glyph.openPawCursor
+  , axes = initialAxes
   }
 
 updateGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
@@ -83,6 +92,15 @@ updateScene appInput scene =
 
 -- graphics transformation pipeline
 
+drawAxes : Axes -> Form
+drawAxes axes =
+  group [
+    traced (solid black) (segment axes.pos (0, 5000))
+  , traced (solid black) (segment axes.pos (0, -5000))
+  , traced (solid black) (segment axes.pos (5000, 0))
+  , traced (solid black) (segment axes.pos (-5000, 0))
+  ]
+
 glyph2World : Glyph.Glyph -> Transform2D.Transform2D
 glyph2World (entity, entityForm) =
   Transform2D.multiply
@@ -95,17 +113,18 @@ world2Camera camera =
 
 renderScene : Scene -> Form
 renderScene scene =
-  group <| map (\glyph ->
+  let
+    rootGlyph = head scene.glyphTools
+  in
+    group [
       groupTransform
-        (Transform2D.multiply (world2Camera scene.camera) (glyph2World glyph))
-        [Glyph.draw glyph]
-    )
-    [head scene.glyphTools]
+        (Transform2D.multiply (world2Camera scene.camera) (glyph2World rootGlyph))
+        [drawAxes scene.axes, Glyph.draw rootGlyph]
+    ]
 
 renderCursor : Glyph.Glyph -> Form
 renderCursor (entity, entityForm) =
   move entity.pos <| scale 0.5 <| entityForm entity 10
-
 
 renderToolbar { glyphTools } =
   flow down
@@ -120,8 +139,8 @@ render (w, h) scene =
     <| container w h middle
     <| flow right [
          color gray <| collage (fst windowDim) (snd windowDim) [
-           move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
-         , renderScene scene
+           renderScene scene
+         , move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
          , renderCursor scene.cursor
          ]
        ]
