@@ -117,7 +117,7 @@ drawAxes axes =
 glyph2World : Glyph.Glyph -> Transform2D.Transform2D
 glyph2World (entity, entityForm) =
   Transform2D.multiply
-    (Transform2D.translation (fst entity.pos) (snd entity.pos))
+    (uncurry Transform2D.translation entity.pos)
     (Transform2D.rotation (degrees entity.rot))
 
 world2Camera: Camera -> Transform2D.Transform2D
@@ -129,11 +129,11 @@ renderScene scene =
   let
     rootGlyph = head scene.glyphTools
   in
-    group [
-      groupTransform
-        (Transform2D.multiply (world2Camera scene.camera) (glyph2World rootGlyph))
-        [drawAxes scene.axes, Glyph.draw rootGlyph]
-    ]
+    groupTransform
+      (Transform2D.multiply (world2Camera scene.camera) (glyph2World rootGlyph))
+      [ drawAxes scene.axes
+      , Glyph.draw rootGlyph
+      ]
 
 renderCursor : Glyph.Glyph -> Form
 renderCursor (entity, entityForm) =
@@ -151,7 +151,7 @@ render (w, h) scene =
   color lightGray
     <| container w h middle
     <| flow right [
-         color gray <| collage (fst windowDim) (snd windowDim) [
+         color gray <| uncurry collage windowDim [
            renderScene scene
          , move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
          , renderCursor scene.cursor
