@@ -122,7 +122,9 @@ glyph2World (entity, entityForm) =
 
 world2Camera: Camera -> Transform2D.Transform2D
 world2Camera camera =
-  Transform2D.translation (fst camera.pos) (snd camera.pos)
+  Transform2D.multiply
+    (uncurry Transform2D.translation camera.pos)
+    (Transform2D.rotation (degrees camera.rot))
 
 renderScene : Scene -> Form
 renderScene scene =
