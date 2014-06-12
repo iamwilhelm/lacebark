@@ -92,30 +92,26 @@ updateScene appInput scene =
 
 -- graphics transformation pipeline
 
-drawAxesTicks : Axes -> (Float, Float) -> Form
+data AxesDirection = XAxis | YAxis
+
+drawAxesTicks : Axes -> AxesDirection -> Form
 drawAxesTicks axes direction =
   group <| map (\x ->
       case direction of
-        (dir, 0) ->
-          traced (solid black)
-            (segment (Vec.add axes.pos (dir * x, 10)) (Vec.add axes.pos (dir * x, -10)))
-        (0, dir) ->
-          traced (solid black)
-            (segment (Vec.add axes.pos (10, dir * x)) (Vec.add axes.pos (-10, dir * x)))
+        XAxis ->
+          traced (solid black) (segment (x, 10) (x, -10))
+        YAxis ->
+          traced (solid black) (segment (10, x) (-10, x))
     )
-    [100, 200, 300, 400, 500]
+    [-500, -400, -300, -200, -100, 100, 200, 300, 400, 500]
 
 drawAxes : Axes -> Form
 drawAxes axes =
   group [
-    traced (solid black) (segment axes.pos (0, 5000))
-  , drawAxesTicks axes (1, 0)
-  , traced (solid black) (segment axes.pos (0, -5000))
-  , drawAxesTicks axes (-1, 0)
-  , traced (solid black) (segment axes.pos (5000, 0))
-  , drawAxesTicks axes (0, 1)
-  , traced (solid black) (segment axes.pos (-5000, 0))
-  , drawAxesTicks axes (0, -1)
+    traced (solid black) (segment (0, -5000) (0, 5000))
+  , drawAxesTicks axes XAxis
+  , traced (solid black) (segment (5000, 0) (-5000, 0))
+  , drawAxesTicks axes YAxis
   ]
 
 glyph2World : Glyph.Glyph -> Transform2D.Transform2D
