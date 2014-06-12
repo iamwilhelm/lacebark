@@ -120,11 +120,16 @@ glyph2World (entity, entityForm) =
     (uncurry Transform2D.translation entity.pos)
     (Transform2D.rotation (degrees entity.rot))
 
-world2Camera: Camera -> Transform2D.Transform2D
+world2Camera : Camera -> Transform2D.Transform2D
 world2Camera camera =
   Transform2D.multiply
     (uncurry Transform2D.translation camera.pos)
     (Transform2D.rotation (degrees camera.rot))
+
+camera2Viewport : Transform2D.Transform2D
+camera2Viewport =
+  Transform2D.identity
+
 
 renderScene : Scene -> Form
 renderScene scene =
@@ -132,7 +137,9 @@ renderScene scene =
     rootGlyph = head scene.glyphTools
   in
     groupTransform
-      (Transform2D.multiply (world2Camera scene.camera) (glyph2World rootGlyph))
+      (Transform2D.multiply camera2Viewport
+       <| Transform2D.multiply (world2Camera scene.camera)
+       <| (glyph2World rootGlyph))
       [ drawAxes scene.axes
       , Glyph.draw rootGlyph
       ]
