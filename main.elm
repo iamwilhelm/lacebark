@@ -91,58 +91,57 @@ updateScene appInput scene =
 -- graphics transformation pipeline
 
 
-glyph2WorldTF : Glyph.Glyph -> Transform2D.Transform2D
-glyph2WorldTF (entity, entityForm) =
+glyph2WorldMat : Glyph.Glyph -> Transform2D.Transform2D
+glyph2WorldMat (entity, entityForm) =
   Transform2D.multiply
     (uncurry Transform2D.translation entity.pos)
     (Transform2D.rotation (degrees entity.rot))
 
-world2CameraTF : Camera -> Transform2D.Transform2D
-world2CameraTF camera =
+-- [Forms in this frame already] -> [Forms that need to be transformed to this frame] -> [Resulting Forms in this frame]
+renderInWorldFrame : Glyph.Glyph -> [Form] -> [Form] -> [Form]
+renderInWorldFrame glyph inFrameForms childFrameForms =
+  groupTransform (glyph2WorldMat glyph) childFrameForms :: inFrameForms
+
+world2CameraMat : Camera -> Transform2D.Transform2D
+world2CameraMat camera =
   Transform2D.multiply
     (uncurry Transform2D.translation camera.pos)
     (Transform2D.rotation (degrees camera.rot))
 
-camera2ViewportTF : Transform2D.Transform2D
-camera2ViewportTF =
+renderInCameraFrame : Camera -> [Form] -> [Form] -> [Form]
+renderInCameraFrame camera inFrameForms childFrameForms =
+  -- clip all objects outside the camera
+  groupTransform (world2CameraMat camera) childFrameForms :: inFrameForms
+
+camera2ViewportMat : Transform2D.Transform2D
+camera2ViewportMat =
   Transform2D.identity
 
+renderInViewportFrame : [Form] -> [Form] -> [Form]
+renderInViewportFrame inFrameForms childFrameForms =
+  -- clip all objects outside the viewport
+  groupTransform camera2ViewportMat childFrameForms :: inFrameForms
 
-renderScene : Scene -> Form
+-- convert all draw() methods to toForm methods in namespace
+renderScene : Scene -> [Form]
 renderScene scene =
   let
     rootGlyph = head scene.glyphTools
   in
-    groupTransform
-      (Transform2D.multiply camera2ViewportTF
-       <| Transform2D.multiply (world2CameraTF scene.camera)
-       <| (glyph2WorldTF rootGlyph))
-      [ Axes.draw scene.axes
-      , Glyph.draw rootGlyph
-      ]
+    renderInViewportFrame []
+    <| renderInCameraFrame scene.camera [Glyph.drawAsCursor scene.cursor]
+    <| renderInWorldFrame rootGlyph []
+    <| [Axes.draw scene.axes, Glyph.draw rootGlyph]
 
-renderCursor : Glyph.Glyph -> Form
-renderCursor (entity, entityForm) =
-  move entity.pos <| scale 0.5 <| entityForm entity 10
-
-renderToolbar { glyphTools } =
-  flow down
-  <| map (\glyph -> collage 50 50 [scale 0.15 <| Glyph.draw glyph ]) glyphTools
-
-
-windowDim = (1024, 600)
+    --, move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =
   color lightGray
     <| container w h middle
-    <| flow right [
-         color gray <| uncurry collage windowDim [
-           renderScene scene
-         , move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
-         , renderCursor scene.cursor
-         ]
-       ]
+    <| color gray
+    <| uncurry collage windowDim
+    <| renderScene scene
 
 ----- All signals and input into the program
 
@@ -156,5 +155,6 @@ mouseInput = sampleOn clockInput
 keyInput = Keyboard.wasd
 input = (,,,) <~ clockInput ~ mouseInput ~ Mouse.isDown ~ keyInput
 
+windowDim = (1024, 600)
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
 
