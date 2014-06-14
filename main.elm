@@ -6,6 +6,7 @@ import Transform2D
 import Vec
 import Entity (..)
 import Glyph
+import Axes
 
 ----- Graphics pipeline
 -- Frame coords
@@ -24,16 +25,13 @@ relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 type Camera = Entity
 initialCamera = initialEntity
 
-type Axes = Entity
-initialAxes = initialEntity
-
 -- TODO Scene and tools overlay and cursor overlay should all be inserted in
 -- different parts of the graphics transformation pipeline
 type Scene = {
     camera: Camera
   , glyphTools: [Glyph.Glyph]
   , cursor: Glyph.Glyph
-  , axes: Axes
+  , axes: Axes.Axes
   }
 
 initialScene = {
@@ -48,7 +46,7 @@ initialScene = {
     , Glyph.diamondGlyph
     ]
   , cursor = Glyph.openPawCursor
-  , axes = initialAxes
+  , axes = Axes.initialAxes
   }
 
 updateGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
@@ -92,42 +90,21 @@ updateScene appInput scene =
 
 -- graphics transformation pipeline
 
-data AxesDirection = XAxis | YAxis
 
-drawAxesTicks : Axes -> AxesDirection -> Form
-drawAxesTicks axes direction =
-  group <| map (\x ->
-      case direction of
-        XAxis ->
-          traced (solid black) (segment (x, 10) (x, -10))
-        YAxis ->
-          traced (solid black) (segment (10, x) (-10, x))
-    )
-    [-500, -400, -300, -200, -100, 100, 200, 300, 400, 500]
-
-drawAxes : Axes -> Form
-drawAxes axes =
-  group [
-    traced (solid black) (segment (0, -5000) (0, 5000))
-  , drawAxesTicks axes XAxis
-  , traced (solid black) (segment (5000, 0) (-5000, 0))
-  , drawAxesTicks axes YAxis
-  ]
-
-glyph2World : Glyph.Glyph -> Transform2D.Transform2D
-glyph2World (entity, entityForm) =
+glyph2WorldTF : Glyph.Glyph -> Transform2D.Transform2D
+glyph2WorldTF (entity, entityForm) =
   Transform2D.multiply
     (uncurry Transform2D.translation entity.pos)
     (Transform2D.rotation (degrees entity.rot))
 
-world2Camera : Camera -> Transform2D.Transform2D
-world2Camera camera =
+world2CameraTF : Camera -> Transform2D.Transform2D
+world2CameraTF camera =
   Transform2D.multiply
     (uncurry Transform2D.translation camera.pos)
     (Transform2D.rotation (degrees camera.rot))
 
-camera2Viewport : Transform2D.Transform2D
-camera2Viewport =
+camera2ViewportTF : Transform2D.Transform2D
+camera2ViewportTF =
   Transform2D.identity
 
 
@@ -137,10 +114,10 @@ renderScene scene =
     rootGlyph = head scene.glyphTools
   in
     groupTransform
-      (Transform2D.multiply camera2Viewport
-       <| Transform2D.multiply (world2Camera scene.camera)
-       <| (glyph2World rootGlyph))
-      [ drawAxes scene.axes
+      (Transform2D.multiply camera2ViewportTF
+       <| Transform2D.multiply (world2CameraTF scene.camera)
+       <| (glyph2WorldTF rootGlyph))
+      [ Axes.draw scene.axes
       , Glyph.draw rootGlyph
       ]
 
