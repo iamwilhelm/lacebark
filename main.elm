@@ -128,12 +128,17 @@ renderScene scene =
   let
     rootGlyph = head scene.glyphTools
   in
-    renderInViewportFrame []
-    <| renderInCameraFrame scene.camera [Glyph.drawAsCursor scene.cursor]
-    <| renderInWorldFrame rootGlyph []
+    renderInViewportFrame [
+      Glyph.drawAsCursor scene.cursor
+    ]
+    <| renderInCameraFrame scene.camera [
+      Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene
+    ]
+    <| renderInWorldFrame rootGlyph [
+    ]
     <| [Axes.draw scene.axes, Glyph.draw rootGlyph]
+    
 
-    --, move (-(fst windowDim) / 2 + 50, 0) (toForm <| renderToolbar scene)
 
 render : (Int, Int) -> Scene -> Element
 render (w, h) scene =

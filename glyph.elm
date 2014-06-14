@@ -11,6 +11,21 @@ draw: Glyph -> Form
 draw (entity, entityForm) =
   entityForm entity 10
 
+drawAsCursor : Glyph -> Form
+drawAsCursor (entity, entityForm) =
+  move entity.pos <| scale 0.5 <| entityForm entity 10
+
+drawToolbar { glyphTools } =
+  toForm
+  <| flow down
+  <| map (\glyph -> collage 50 50 [scale 0.15 <| draw glyph]) glyphTools
+
+
+-- a hack to move and show the toolbar. toolbar should really just be a glyph that
+-- contains other glyphs
+transformToolbar windowDim toolbar =
+  move (-(fst windowDim) / 2 + 50, 0) toolbar
+
 -- generic 'language' constructs
 
 include : Glyph -> Form
