@@ -1,20 +1,13 @@
 import Window
 import Mouse
 import Keyboard
-import Transform2D
 
 import Vec
 import Entity (..)
 import Glyph
 import Axes
-
------ Graphics pipeline
--- Frame coords
--- Glyph coords
--- World coords
--- Camera coords
--- Viewport coords
--- Window coords
+import Camera
+import Gpipeline
 
 center : (Int, Int) -> (Int, Int)
 center (w, h) = (div w 2 , div h 2)
@@ -22,17 +15,17 @@ center (w, h) = (div w 2 , div h 2)
 relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
 relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
 
-type Camera = Entity
-initialCamera = initialEntity
-
 -- TODO Scene and tools overlay and cursor overlay should all be inserted in
 -- different parts of the graphics transformation pipeline
+
 type Scene = {
-    camera: Camera
+    camera: Camera.Camera
   , glyphTools: [Glyph.Glyph]
   , cursor: Glyph.Glyph
   , axes: Axes.Axes
   }
+
+initialCamera = initialEntity
 
 initialScene = {
     camera = initialCamera
@@ -70,7 +63,7 @@ updateCursor (_, (mouseX, mouseY), mouseDown, _) _ =
   in
     ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
 
-updateCamera : AppInput -> Camera -> Camera
+updateCamera : AppInput -> Camera.Camera -> Camera.Camera
 updateCamera (dt, _, _, keyDir) camera =
   let
     new_vec = Vec.mulS (toFloat keyDir.x, toFloat keyDir.y) -150
@@ -87,57 +80,21 @@ updateScene appInput scene =
           , glyphTools <- updateGlyphTools appInput scene.glyphTools
           , cursor <- updateCursor appInput scene.cursor }
 
-
--- graphics transformation pipeline
-
-
-glyph2WorldMat : Glyph.Glyph -> Transform2D.Transform2D
-glyph2WorldMat (entity, entityForm) =
-  Transform2D.multiply
-    (uncurry Transform2D.translation entity.pos)
-    (Transform2D.rotation (degrees entity.rot))
-
--- [Forms in this frame already] -> [Forms that need to be transformed to this frame] -> [Resulting Forms in this frame]
-renderInWorldFrame : Glyph.Glyph -> [Form] -> [Form] -> [Form]
-renderInWorldFrame glyph inFrameForms childFrameForms =
-  groupTransform (glyph2WorldMat glyph) childFrameForms :: inFrameForms
-
-world2CameraMat : Camera -> Transform2D.Transform2D
-world2CameraMat camera =
-  Transform2D.multiply
-    (uncurry Transform2D.translation camera.pos)
-    (Transform2D.rotation (degrees camera.rot))
-
-renderInCameraFrame : Camera -> [Form] -> [Form] -> [Form]
-renderInCameraFrame camera inFrameForms childFrameForms =
-  -- clip all objects outside the camera
-  groupTransform (world2CameraMat camera) childFrameForms :: inFrameForms
-
-camera2ViewportMat : Transform2D.Transform2D
-camera2ViewportMat =
-  Transform2D.identity
-
-renderInViewportFrame : [Form] -> [Form] -> [Form]
-renderInViewportFrame inFrameForms childFrameForms =
-  -- clip all objects outside the viewport
-  groupTransform camera2ViewportMat childFrameForms :: inFrameForms
-
--- convert all draw() methods to toForm methods in namespace
+-- TODO convert all draw() methods to toForm methods in namespace
 renderScene : Scene -> [Form]
 renderScene scene =
-  let
-    rootGlyph = head scene.glyphTools
-  in
-    renderInViewportFrame [
-      Glyph.drawAsCursor scene.cursor
-    ]
-    <| renderInCameraFrame scene.camera [
-      Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene
-    ]
-    <| renderInWorldFrame rootGlyph [
-    ]
-    <| [Axes.draw scene.axes, Glyph.draw rootGlyph]
-    
+  Gpipeline.renderInViewportFrame [
+    Glyph.drawAsCursor scene.cursor
+  ]
+  <| Gpipeline.renderInCameraFrame scene.camera [
+    Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene
+  ]
+  <| Gpipeline.renderInWorldFrame (head scene.glyphTools) [
+  ]
+  <| [
+    Axes.draw scene.axes
+  , Glyph.draw <| head scene.glyphTools
+  ]
 
 
 render : (Int, Int) -> Scene -> Element
