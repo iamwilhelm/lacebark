@@ -49,9 +49,34 @@ updateGlyph (dt, _, _, _) (entity, entityForm) =
    },
    entityForm)
 
+addGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
+addGlyph (dt, mousePos, mouseDown, _) (entity, prevEntityForm) =
+  let
+    newEntityForm entity depth =
+      group [
+        prevEntityForm entity depth
+      , move (toFloat <| fst mousePos, toFloat <| snd mousePos)
+        <| filled green <| ngon 5 20
+      ]
+  in
+    (entity, newEntityForm)
+
 updateGlyphTools : AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
-updateGlyphTools appInput glyphTools =
-  map (\glyph -> updateGlyph appInput glyph) glyphTools
+updateGlyphTools (dt, mousePos, mouseDown, keyDir) glyphTools =
+  case mouseDown of
+    True ->
+      let
+        headSet = take 0 glyphTools
+        tailSet = drop 0 glyphTools
+      in
+        headSet ++ (
+            addGlyph (dt, mousePos, mouseDown, keyDir) <| head tailSet
+          ) :: tail tailSet
+    False ->
+      map (\glyph ->
+        updateGlyph (dt, mousePos, mouseDown, keyDir) glyph
+      ) glyphTools
+
 
 updateCursor : AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCursor (_, (mouseX, mouseY), mouseDown, _) _ =
@@ -76,9 +101,21 @@ updateCamera (dt, _, _, keyDir) camera =
 
 updateScene : AppInput -> Scene -> Scene
 updateScene appInput scene =
-  { scene | camera <- updateCamera appInput scene.camera
-          , glyphTools <- updateGlyphTools appInput scene.glyphTools
-          , cursor <- updateCursor appInput scene.cursor }
+  -- Gpipeline.updateInWorldFrame []
+  -- <| Gpipeline.updateInWorldFrame []
+  -- <| Gpipeline.updateInCameraFrame []
+  -- <| Gpipeline.updateInViewportFrame []
+  -- <| Gpipeline.updateInWindowFrame windowDim [
+  -- ]
+
+  let
+    updatedCamera = updateCamera appInput scene.camera
+    updatedGlyphTools = updateGlyphTools appInput scene.glyphTools
+    updatedCursor = updateCursor appInput scene.cursor
+  in
+    { scene | camera <- updatedCamera
+            , glyphTools <- updatedGlyphTools
+            , cursor <- updatedCursor }
 
 -- TODO convert all draw() methods to toForm methods in namespace
 renderScene : Scene -> [Form]
