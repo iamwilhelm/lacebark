@@ -43,14 +43,14 @@ initialScene = {
   }
 
 updateGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
-updateGlyph (dt, _, _, _) (entity, entityForm) =
+updateGlyph { dt } (entity, entityForm) =
   ({ entity |
      pos <- Vec.add entity.pos <| Vec.mulS entity.vel dt
    },
    entityForm)
 
 addGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
-addGlyph (dt, mousePos, mouseDown, _) (entity, prevEntityForm) =
+addGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   let
     newEntityForm entity depth =
       group [
@@ -62,34 +62,34 @@ addGlyph (dt, mousePos, mouseDown, _) (entity, prevEntityForm) =
     (entity, newEntityForm)
 
 updateGlyphTools : AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
-updateGlyphTools (dt, mousePos, mouseDown, keyDir) glyphTools =
-  case mouseDown of
+updateGlyphTools appinput glyphTools =
+  case appinput.mouseDown of
     True ->
       let
         headSet = take 0 glyphTools
         tailSet = drop 0 glyphTools
       in
         headSet ++ (
-            addGlyph (dt, mousePos, mouseDown, keyDir) <| head tailSet
+            addGlyph appinput <| head tailSet
           ) :: tail tailSet
     False ->
       map (\glyph ->
-        updateGlyph (dt, mousePos, mouseDown, keyDir) glyph
+        updateGlyph appinput glyph
       ) glyphTools
 
 
 updateCursor : AppInput -> Glyph.Glyph -> Glyph.Glyph
-updateCursor (_, (mouseX, mouseY), mouseDown, _) _ =
+updateCursor { mousePos, mouseDown } _ =
   let (entity, entityForm) =
     if mouseDown == True then
       Glyph.closedPawCursor
     else
       Glyph.openPawCursor
   in
-    ({ entity | pos <- (toFloat mouseX, toFloat mouseY) }, entityForm)
+    ({ entity | pos <- (toFloat <| fst mousePos, toFloat <| snd mousePos) }, entityForm)
 
 updateCamera : AppInput -> Camera.Camera -> Camera.Camera
-updateCamera (dt, _, _, keyDir) camera =
+updateCamera { dt, keyDir } camera =
   let
     new_vec = Vec.mulS (toFloat keyDir.x, toFloat keyDir.y) -150
     new_pos = Vec.add camera.pos <| Vec.mulS camera.vel dt
@@ -144,7 +144,12 @@ render (w, h) scene =
 
 ----- All signals and input into the program
 
-type AppInput = (Time, (Int, Int), Bool, { x: Int, y: Int })
+type AppInput = {
+    dt: Time
+  , mousePos: (Int, Int)
+  , mouseDown: Bool
+  , keyDir: { x: Int, y: Int }
+  }
 
 clockInput = lift inSeconds (fps 30)
 mouseInput = sampleOn clockInput
@@ -152,7 +157,9 @@ mouseInput = sampleOn clockInput
                       (center <~ Window.dimensions)
                       Mouse.position)
 keyInput = Keyboard.wasd
-input = (,,,) <~ clockInput ~ mouseInput ~ Mouse.isDown ~ keyInput
+
+input : Signal AppInput
+input = lift4 AppInput clockInput mouseInput Mouse.isDown keyInput
 
 windowDim = (1024, 600)
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
