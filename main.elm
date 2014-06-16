@@ -9,26 +9,28 @@ import Axes
 import Camera
 import Gpipeline
 
-center : (Int, Int) -> (Int, Int)
-center (w, h) = (div w 2 , div h 2)
-
-relativeMouse : (Int, Int) -> (Int, Int) -> (Int, Int)
-relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
+import Matrix
 
 -- TODO Scene and tools overlay and cursor overlay should all be inserted in
 -- different parts of the graphics transformation pipeline
 
 type Scene = {
     camera: Camera.Camera
-  , glyphTools: [Glyph.Glyph]
+  , viewport: Camera.Viewport
   , cursor: Glyph.Glyph
   , axes: Axes.Axes
+  , glyphTools: [Glyph.Glyph]
   }
 
 initialCamera = initialEntity
 
+initialViewport = initialEntity
+
 initialScene = {
     camera = initialCamera
+  , viewport = initialViewport
+  , cursor = Glyph.openPawCursor
+  , axes = Axes.initialAxes
   , glyphTools = [
       Glyph.scratchGlyph
     , Glyph.tentacleGlyph
@@ -38,8 +40,6 @@ initialScene = {
     , Glyph.heartGlyph
     , Glyph.diamondGlyph
     ]
-  , cursor = Glyph.openPawCursor
-  , axes = Axes.initialAxes
   }
 
 updateGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
@@ -55,7 +55,7 @@ addGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
     newEntityForm entity depth =
       group [
         prevEntityForm entity depth
-      , move (toFloat <| fst mousePos, toFloat <| snd mousePos)
+      , move mousePos
         <| filled green <| ngon 5 20
       ]
   in
@@ -86,7 +86,7 @@ updateCursor { mousePos, mouseDown } _ =
     else
       Glyph.openPawCursor
   in
-    ({ entity | pos <- (toFloat <| fst mousePos, toFloat <| snd mousePos) }, entityForm)
+    ({ entity | pos <- mousePos }, entityForm)
 
 updateCamera : AppInput -> Camera.Camera -> Camera.Camera
 updateCamera { dt, keyDir } camera =
@@ -101,21 +101,22 @@ updateCamera { dt, keyDir } camera =
 
 updateScene : AppInput -> Scene -> Scene
 updateScene appInput scene =
-  -- Gpipeline.updateInWorldFrame []
-  -- <| Gpipeline.updateInWorldFrame []
-  -- <| Gpipeline.updateInCameraFrame []
-  -- <| Gpipeline.updateInViewportFrame []
-  -- <| Gpipeline.updateInWindowFrame windowDim [
-  -- ]
-
   let
-    updatedCamera = updateCamera appInput scene.camera
-    updatedGlyphTools = updateGlyphTools appInput scene.glyphTools
-    updatedCursor = updateCursor appInput scene.cursor
+    --mouseInViewport = Gpipeline.mouseInViewportFrame appInput.viewport appInput.mousePos
+    --appInputInViewport = { appInput - mousePos | mousePos = mouseInViewport }
+
+    stepCursor = updateCursor appInput scene.cursor
+
+    mouseInCamera = Gpipeline.mouseInCameraFrame scene.camera appInput.mousePos
+    appInputInCamera = { appInput - mousePos | mousePos = mouseInCamera }
+
+    stepCamera = updateCamera appInputInCamera scene.camera
+    stepGlyphTools = updateGlyphTools appInputInCamera scene.glyphTools
+
   in
-    { scene | camera <- updatedCamera
-            , glyphTools <- updatedGlyphTools
-            , cursor <- updatedCursor }
+    { scene | camera <- stepCamera
+            , glyphTools <- stepGlyphTools
+            , cursor <- stepCursor }
 
 -- TODO convert all draw() methods to toForm methods in namespace
 renderScene : Scene -> [Form]
@@ -146,20 +147,31 @@ render (w, h) scene =
 
 type AppInput = {
     dt: Time
-  , mousePos: (Int, Int)
+  , mousePos: (Float, Float)
   , mouseDown: Bool
   , keyDir: { x: Int, y: Int }
   }
 
-clockInput = lift inSeconds (fps 30)
-mouseInput = sampleOn clockInput
-               (lift2 relativeMouse
-                      (center <~ Window.dimensions)
-                      Mouse.position)
-keyInput = Keyboard.wasd
 
 input : Signal AppInput
-input = lift4 AppInput clockInput mouseInput Mouse.isDown keyInput
+input =
+  let
+    mouseToFloat (x, y) = (toFloat x, toFloat y)
+    relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
+    center (w, h) = (div w 2, div h 2)
+
+    clockInput : Signal Time
+    clockInput = lift inSeconds (fps 30)
+
+    mouseInput : Signal (Float, Float)
+    mouseInput = sampleOn clockInput <| mouseToFloat
+                   <~ (relativeMouse <~ (center <~ Window.dimensions) ~ Mouse.position)
+
+    mouseDownInput = sampleOn clockInput Mouse.isDown
+
+    keyInput = Keyboard.wasd
+  in
+    lift4 AppInput clockInput mouseInput mouseDownInput keyInput
 
 windowDim = (1024, 600)
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
