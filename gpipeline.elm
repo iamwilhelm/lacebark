@@ -50,14 +50,25 @@ renderInViewportFrame inFrameForms childFrameForms =
   -- TODO clip all objects outside the viewport
   groupTransform camera2ViewportMat childFrameForms :: inFrameForms
 
--- mouseInWorldFrame : Glyph.Glyph -> (Int, Int) -> (Int, Int)
--- mouseInWorldFrame (entity, entityForm) mousePos =
---   Transform2D.multiply
---     (uncurry Transform2D.translation <| Vec.mulS entity.pos -1)
---     (Transform2D.rotation (degrees -entity.rot))
+mouseInCameraFrame : Camera.Viewport -> (Float, Float) -> (Float, Float)
+mouseInCameraFrame viewport mousePos =
+  let
+    center : (Float, Float) -> (Float, Float)
+    center (w, h) = (w / 2, h / 2)
 
-mouseInCameraFrame : Camera.Camera -> (Float, Float) -> (Float, Float)
-mouseInCameraFrame camera mousePos =
+    offset = center viewport.dim
+
+    v = Math.Matrix4.transform (
+          Math.Matrix4.scale3 1 -1 1
+          <| Math.Matrix4.translate3 -(fst offset) (snd offset) 0
+          <| Math.Matrix4.makeRotate (degrees -viewport.rot) Math.Vector3.k
+        )
+        (Math.Vector3.vec3 (fst mousePos) (snd mousePos) 0)
+  in
+    (Math.Vector3.getX v, Math.Vector3.getY v)
+
+mouseInWorldFrame : Camera.Camera -> (Float, Float) -> (Float, Float)
+mouseInWorldFrame camera mousePos =
   let
     v = Math.Matrix4.transform (
         Math.Matrix4.translate3 -(fst camera.pos) -(snd camera.pos) 0
@@ -67,20 +78,4 @@ mouseInCameraFrame camera mousePos =
   in
     (Math.Vector3.getX v, Math.Vector3.getY v)
 
-mouseInViewportFrame : Camera.Viewport -> (Float, Float) -> (Float, Float)
-mouseInViewportFrame viewPort mousePos =
-  let
-    -- center : (Int, Int) -> (Int, Int)
-    -- center (w, h) = (w / 2, h / 2)
-
-    -- offset = center <~ Window.dimensions
-    -- floatOffset = (toFloat <| fst offset, toFloat <| snd offset)
-
-    v = Math.Matrix4.transform (
-          Math.Matrix4.translate3 0 0 0
-          <| Math.Matrix4.makeRotate (degrees -viewPort.rot) Math.Vector3.k
-        )
-        (Math.Vector3.vec3 (fst mousePos) (snd mousePos) 0)
-  in
-    (Math.Vector3.getX v, Math.Vector3.getY v)
 

@@ -97,24 +97,33 @@ updateCamera { dt, keyDir } camera =
       , vel <- new_vec
     }
 
+updateViewport : AppInput -> Camera.Viewport -> Camera.Viewport
+updateViewport { winDim } viewport =
+  { viewport |
+      dim <- tupInt2Float winDim
+  }
+
 updateScene : AppInput -> Scene -> Scene
 updateScene appInput scene =
   let
-    --mouseInViewport = Gpipeline.mouseInViewportFrame appInput.viewport appInput.mousePos
-    --appInputInViewport = { appInput - mousePos | mousePos = mouseInViewport }
+    stepViewport = updateViewport appInput scene.viewport
 
-    stepCursor = updateCursor appInput scene.cursor
-
-    mouseInCamera = Gpipeline.mouseInCameraFrame scene.camera appInput.mousePos
+    mouseInCamera = Gpipeline.mouseInCameraFrame stepViewport appInput.mousePos
     appInputInCamera = { appInput - mousePos | mousePos = mouseInCamera }
 
-    stepCamera = updateCamera appInputInCamera scene.camera
-    stepGlyphTools = updateGlyphTools appInputInCamera scene.glyphTools
+    stepCursor = updateCursor appInputInCamera scene.cursor
+
+    mouseInWorld = Gpipeline.mouseInWorldFrame scene.camera appInputInCamera.mousePos
+    appInputInWorld = { appInput - mousePos | mousePos = mouseInWorld }
+
+    stepCamera = updateCamera appInputInWorld scene.camera
+    stepGlyphTools = updateGlyphTools appInputInWorld scene.glyphTools
 
   in
     { scene | camera <- stepCamera
             , glyphTools <- stepGlyphTools
-            , cursor <- stepCursor }
+            , cursor <- stepCursor
+            , viewport <- stepViewport }
 
 -- TODO convert all draw() methods to toForm methods in namespace
 renderScene : Scene -> [Form]
@@ -138,8 +147,7 @@ render (w, h) scene =
   color lightGray
     <| container w h middle
     <| color gray
-    <| uncurry collage windowDim
-    <| renderScene scene
+    <| uncurry collage windowDim <| renderScene scene
 
 ----- All signals and input into the program
 
@@ -148,28 +156,34 @@ type AppInput = {
   , mousePos: (Float, Float)
   , mouseDown: Bool
   , keyDir: { x: Int, y: Int }
+  , winDim: (Int, Int)
   }
 
+
+tupInt2Float (x, y) = (toFloat x, toFloat y)
 
 input : Signal AppInput
 input =
   let
-    mouseToFloat (x, y) = (toFloat x, toFloat y)
     relativeMouse (ox, oy) (x, y) = (x - ox, -(y - oy))
     center (w, h) = (div w 2, div h 2)
 
     clockInput : Signal Time
-    clockInput = lift inSeconds (fps 30)
+    clockInput = lift inSeconds (fps 60)
 
     mouseInput : Signal (Float, Float)
-    mouseInput = sampleOn clockInput <| mouseToFloat
-                   <~ (relativeMouse <~ (center <~ Window.dimensions) ~ Mouse.position)
+    mouseInput = sampleOn clockInput <| tupInt2Float <~ Mouse.position
 
+    --mouseDownInput : Signal Bool
     mouseDownInput = sampleOn clockInput Mouse.isDown
 
+    --windowInput : Signal (Int, Int)
+    windowInput = Window.dimensions
+
+    --keyInput = Singal { x: Int, y: Int }
     keyInput = Keyboard.wasd
   in
-    lift4 AppInput clockInput mouseInput mouseDownInput keyInput
+    AppInput <~ clockInput ~ mouseInput ~ mouseDownInput ~ keyInput ~ windowInput
 
 windowDim = (1024, 600)
 main = render <~ Window.dimensions ~ foldp updateScene initialScene input
