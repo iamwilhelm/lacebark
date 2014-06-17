@@ -9,8 +9,6 @@ import Axes
 import Camera
 import Gpipeline
 
-import Matrix
-
 -- TODO Scene and tools overlay and cursor overlay should all be inserted in
 -- different parts of the graphics transformation pipeline
 
