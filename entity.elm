@@ -11,12 +11,12 @@ type Entity = {
   , radius: Float
   }
 
-initialEntity = { pos = (0, 0)
-                , vel = (0, 0)
-                , rot = 0
-
-                , colr = blue
-                , dim = (10, 10)
-                , radius = 75
-                }
+initialEntity = {
+    pos = (0, 0)
+  , vel = (0, 0)
+  , rot = 0
+  , dim = (10, 10)
+  , radius = 75
+  , colr = blue
+  }
 
