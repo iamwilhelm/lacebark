@@ -1,17 +1,12 @@
 import Window
-import Mouse
-import Keyboard
-
+import Util
 import Vec
 import Entity (..)
 import Glyph
 import Axes
 import Camera
+import Input
 import Gpipeline
-
-import Math.Matrix4
-import Math.Vector3
-
 
 -- config
 
@@ -48,14 +43,16 @@ initialScene = {
     ]
   }
 
-updateGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
+-- updates to specific entity types
+
+updateGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateGlyph { dt } (entity, entityForm) =
   ({ entity |
      pos <- Vec.add entity.pos <| Vec.mulS entity.vel dt
    },
    entityForm)
 
-addGlyph : AppInput -> Glyph.Glyph -> Glyph.Glyph
+addGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 addGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   let
     newEntityForm entity depth =
@@ -67,7 +64,7 @@ addGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   in
     (entity, newEntityForm)
 
-stampGlyph : AppInput -> Scene -> Scene
+stampGlyph : Input.AppInput -> Scene -> Scene
 stampGlyph appInput scene =
   let
     headSet = take 0 scene.glyphTools
@@ -76,13 +73,13 @@ stampGlyph appInput scene =
   in
     { scene | glyphTools <- stepGlyphTools }
 
-updateGlyphTools : AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
+updateGlyphTools : Input.AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
 updateGlyphTools appinput glyphTools =
   map (\glyph ->
     updateGlyph appinput glyph
   ) glyphTools
 
-updateCursor : AppInput -> Glyph.Glyph -> Glyph.Glyph
+updateCursor : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCursor { mousePos, mouseDown } _ =
   let (entity, entityForm) =
     case mouseDown of
@@ -93,7 +90,7 @@ updateCursor { mousePos, mouseDown } _ =
   in
     ({ entity | pos <- mousePos }, entityForm)
 
-updateCamera : AppInput -> Camera.Camera -> Camera.Camera
+updateCamera : Input.AppInput -> Camera.Camera -> Camera.Camera
 updateCamera { dt, keyDir } camera =
   let
     new_vec = Vec.mulS (toFloat keyDir.x, toFloat keyDir.y) -150
@@ -104,50 +101,53 @@ updateCamera { dt, keyDir } camera =
       , vel <- new_vec
     }
 
-updateViewport : AppInput -> Camera.Viewport -> Camera.Viewport
+updateViewport : Input.AppInput -> Camera.Viewport -> Camera.Viewport
 updateViewport { winDim } viewport =
   { viewport |
-      dim <- floatify winDim
+      dim <- Util.floatify winDim
   }
 
+-- updates in frames
+
+updateInViewportFrame (appInput, scene) =
+  (
+    appInput
+  , { scene | viewport <- updateViewport appInput scene.viewport }
+  )
+
+updateInCameraFrame (appInput, scene) =
+  let
+    inFrameInput = Input.inCameraFrame scene.viewport appInput
+  in
+    (
+      inFrameInput
+    , { scene | cursor <- updateCursor inFrameInput scene.cursor }
+    )
+
+updateInWorldFrame (appInput, scene) =
+  let
+    inFrameInput = Input.inWorldFrame scene.camera appInput
+  in
+    (
+      inFrameInput
+    , { scene | camera <- updateCamera inFrameInput scene.camera
+              , glyphTools <- updateGlyphTools inFrameInput scene.glyphTools
+      }
+    )
 --updateScene : Event -> Scene -> Scene
 updateScene appInput scene =
-  let
+  snd
+  <| updateInWorldFrame . updateInCameraFrame . updateInViewportFrame
+  <| (appInput, scene)
 
-    stepCursor = updateCursor (inCamera scene.viewport <| appInput) scene.cursor
-
-    stepCamera = updateCamera
-                   (inWorld scene.camera . inCamera scene.viewport <| appInput)
-                   scene.camera
-
-    stepGlyphTools = updateGlyphTools
-                       (inWorld scene.camera . inCamera scene.viewport <| appInput)
-                       scene.glyphTools
-
-
-  in
-    { scene | camera <- stepCamera
-            , glyphTools <- stepGlyphTools
-            , cursor <- stepCursor
-    }
-
-updateApp : AppInput -> Scene -> Scene
+-- when click
+-- when trace (dragging while recording path)
+-- when drag
+-- when hover
+-- when move mouse
+updateApp : Input.AppInput -> Scene -> Scene
 updateApp appInput scene =
-  -- when click
-  -- when trace (dragging while recording path)
-  -- when drag
-  -- when hover
-  -- when move mouse
-  let
-    stepScene = { scene | viewport <- updateViewport appInput scene.viewport }
-  in
-    case appInput.mouseDown of
-      True ->
-        updateScene appInput . stampGlyph
-          (inWorld stepScene.camera . inCamera stepScene.viewport <| appInput)
-          <| stepScene
-      False ->
-        updateScene appInput stepScene
+  updateScene appInput scene
 
 
 -- TODO convert all draw() methods to toForm methods in namespace
@@ -174,82 +174,14 @@ render (w, h) scene =
     <| color gray
     <| uncurry collage windowDim <| renderScene scene
 
------ All signals and input into the program
 
-type AppInput = {
-    dt: Time
-  , mousePos: (Float, Float)
-  , mouseDown: Bool
-  , keyDir: { x: Int, y: Int }
-  , winDim: (Int, Int)
-  }
+data Event = Tick Input.AppInput | Click Input.AppInput
 
+event =
+  merges [
+    lift Click Input.appInput
+  , lift Tick Input.appInput
+  ]
 
-floatify (x, y) = (toFloat x, toFloat y)
-
-input : Signal AppInput
-input =
-  let
-    clockInput : Signal Time
-    clockInput = lift inSeconds (fps 60)
-
-    mouseInput : Signal (Float, Float)
-    mouseInput =
-      sampleOn clockInput
-      <| floatify <~ Mouse.position
-
-    --mouseDownInput : Signal Bool
-    mouseDownInput =
-      sampleOn clockInput
-      <| dropRepeats Mouse.isDown
-
-    --keyInput = Singal { x: Int, y: Int }
-    keyInput =
-      sampleOn clockInput Keyboard.wasd
-
-    --windowInput : Signal (Int, Int)
-    windowInput =
-      sampleOn clockInput Window.dimensions
-  in
-    AppInput <~ clockInput ~ mouseInput ~ mouseDownInput ~ keyInput ~ windowInput
-
-mouseInCameraFrame : Camera.Viewport -> (Float, Float) -> (Float, Float)
-mouseInCameraFrame viewport mousePos =
-  let
-    center : (Float, Float) -> (Float, Float)
-    center (w, h) = (w / 2, h / 2)
-
-    offset = center viewport.dim
-
-    v = Math.Matrix4.transform (
-          Math.Matrix4.scale3 1 -1 1
-          <| Math.Matrix4.translate3 -(fst offset) (snd offset) 0
-          <| Math.Matrix4.makeRotate (degrees -viewport.rot) Math.Vector3.k
-        )
-        (Math.Vector3.vec3 (fst mousePos) (snd mousePos) 0)
-  in
-    (Math.Vector3.getX v, Math.Vector3.getY v)
-
-inCamera : Camera.Viewport -> AppInput -> AppInput
-inCamera viewport ({ mousePos } as appInput) =
-  { appInput - mousePos | mousePos = mouseInCameraFrame viewport mousePos }
-
-mouseInWorldFrame : Camera.Camera -> (Float, Float) -> (Float, Float)
-mouseInWorldFrame camera mousePos =
-  let
-    v = Math.Matrix4.transform (
-        Math.Matrix4.translate3 -(fst camera.pos) -(snd camera.pos) 0
-        <| Math.Matrix4.makeRotate (degrees -camera.rot) Math.Vector3.k
-      )
-      (Math.Vector3.vec3 (fst mousePos) (snd mousePos) 0)
-  in
-    (Math.Vector3.getX v, Math.Vector3.getY v)
-
-inWorld : Camera.Camera -> AppInput -> AppInput
-inWorld camera ({ mousePos } as appInput) =
-  { appInput - mousePos | mousePos = mouseInWorldFrame camera mousePos }
-
-
-
-main = render <~ Window.dimensions ~ foldp updateApp initialScene input
+main = render <~ Window.dimensions ~ foldp updateApp initialScene Input.appInput
 
