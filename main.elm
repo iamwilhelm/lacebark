@@ -111,14 +111,14 @@ updateGlyph { dt } (entity, entityForm) =
 updateCurrentGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCurrentGlyph appInput ((entity, entityForm) as glyph) =
   case appInput.mouseEvent of
-    Input.Move (Just (x, y)) ->
+    Input.Move (x, y) ->
       glyph
-    Input.MoveDrag (Just (x, y)) ->
+    Input.MoveDrag (x, y) ->
       addRectGlyph appInput glyph
-    Input.StartDrag (Just (x, y)) ->
+    Input.StartDrag (x, y) ->
       addCircGlyph appInput glyph
-    Input.StopDrag (Just ((sx, sy), (ex, ey))) ->
-      if sx == ex then
+    Input.StopDrag ((sx, sy), (ex, ey)) ->
+      if (sx == ex) && (sy == ey) then
         add5gonGlyph appInput glyph
       else
         add3gonGlyph appInput glyph
@@ -241,3 +241,4 @@ event =
 main = render <~ Window.dimensions ~ foldp updateApp initialScene Input.appInput
 
 --main = asText <~ Input.appInput
+

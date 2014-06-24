@@ -13,17 +13,17 @@ import Maybe (..)
 
 ----- All signals and input into the program
 
-data MouseEvent = Move (Maybe (Int, Int))
-                | MoveDrag (Maybe (Int, Int))
-                | StartDrag (Maybe (Int, Int))
-                | StopDrag (Maybe ((Int, Int), (Int, Int)))
+data MouseEvent = Move (Int, Int)
+                | MoveDrag (Int, Int)
+                | StartDrag (Int, Int)
+                | StopDrag ((Int, Int), (Int, Int))
 
 type AppInput = {
     dt: Time
   , mousePos: (Float, Float)
   , mouseDown: Bool
-  , mouseDragStart: Maybe (Int, Int)
-  , mouseDragStop: Maybe ((Int, Int), (Int, Int))
+  , mouseDragStart: (Int, Int)
+  , mouseDragStop: ((Int, Int), (Int, Int))
   , mouseEvent: MouseEvent
   , keyDir: { x: Int, y: Int }
   , winDim: (Int, Int)
@@ -44,17 +44,20 @@ appInput =
     mouseDownInput =
       sampleOn clockInput <| Mouse.isDown
 
-    mouseDragStart : Signal (Maybe (Int, Int))
-    mouseDragStart = Drag.start
+    mouseDragStart : Signal (Int, Int)
+    mouseDragStart = sampleOn (dropRepeats Mouse.isDown) Mouse.position
 
-    mouseDragStop : Signal (Maybe ((Int, Int), (Int, Int)))
-    mouseDragStop = Drag.drop
+    mouseDragStop : Signal ((Int, Int), (Int, Int))
+    mouseDragStop = let start = keepWhen Mouse.isDown (0, 0) mouseDragStart
+                        stop = Mouse.position
+                    in
+                      (,) <~ start ~ stop |> sampleOn (dropRepeats Mouse.isDown)
 
     mouseEvent =
       merges [
-        lift Move <| dropWhen Mouse.isDown Nothing (lift Just Mouse.position)
-      , lift MoveDrag <| keepWhen Mouse.isDown (Just (0, 0)) (lift Just Mouse.position)
-      , lift StartDrag <| keepWhen Mouse.isDown (Just (0, 0)) mouseDragStart
+        lift Move <| dropWhen Mouse.isDown (0, 0) Mouse.position
+      , lift MoveDrag <| keepWhen Mouse.isDown (0, 0) Mouse.position
+      , lift StartDrag <| keepWhen Mouse.isDown (0, 0) mouseDragStart
       , lift StopDrag mouseDragStop
       ]
     --keyInput = Signal { x: Int, y: Int }
