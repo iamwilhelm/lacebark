@@ -26,6 +26,7 @@ type Scene = {
   , cursor: Glyph.Glyph
   , axes: Axes.Axes
   , glyphTools: [Glyph.Glyph]
+  --, selectedGlyph: 0
   }
 
 initialCamera = initialEntity
@@ -39,19 +40,19 @@ initialScene = {
   , axes = Axes.initialAxes
   , glyphTools = [
       Glyph.scratchGlyph
-    , Glyph.tentacleGlyph
+    --, Glyph.tentacleGlyph
     , Glyph.rectangleGlyph
     , Glyph.circGlyph
-    , Glyph.clubGlyph
-    , Glyph.heartGlyph
-    , Glyph.diamondGlyph
+    --, Glyph.clubGlyph
+    --, Glyph.heartGlyph
+    --, Glyph.diamondGlyph
     ]
   }
 
 -- updates to specific entity types
 
-addNgonGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
-addNgonGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
+add5gonGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+add5gonGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   let
     newEntityForm entity depth =
       group [
@@ -62,6 +63,19 @@ addNgonGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   in
     (entity, newEntityForm)
 
+add3gonGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+add3gonGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
+  let
+    newEntityForm entity depth =
+      group [
+        prevEntityForm entity depth
+      , move mousePos
+        <| filled purple <| ngon 3 20
+      ]
+  in
+    (entity, newEntityForm)
+
+
 addCircGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 addCircGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   let
@@ -70,6 +84,18 @@ addCircGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
         prevEntityForm entity depth
       , move mousePos
         <| filled yellow <| circle 20
+      ]
+  in
+    (entity, newEntityForm)
+
+addRectGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+addRectGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
+  let
+    newEntityForm entity depth =
+      group [
+        prevEntityForm entity depth
+      , move mousePos
+        <| filled red <| rect 10 10
       ]
   in
     (entity, newEntityForm)
@@ -84,18 +110,18 @@ updateGlyph { dt } (entity, entityForm) =
 
 updateCurrentGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCurrentGlyph appInput ((entity, entityForm) as glyph) =
-  case appInput.mouseDragStart of
-    Just (x, y) ->
+  case appInput.mouseEvent of
+    Input.Move (Just (x, y)) ->
       glyph
-    Nothing ->
-      case appInput.mouseDragStop of
-        Just ((sx, sy), (ex, ey)) ->
-          if sx == ex && sy == ey then
-            --Click
-            addCircGlyph appInput glyph
-          else
-            --Dragged
-            addNgonGlyph appInput glyph
+    Input.MoveDrag (Just (x, y)) ->
+      addRectGlyph appInput glyph
+    Input.StartDrag (Just (x, y)) ->
+      addCircGlyph appInput glyph
+    Input.StopDrag (Just ((sx, sy), (ex, ey))) ->
+      if sx == ex then
+        add5gonGlyph appInput glyph
+      else
+        add3gonGlyph appInput glyph
 
 updateGlyphTools : Input.AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
 updateGlyphTools appInput glyphTools =
@@ -214,3 +240,4 @@ event =
 
 main = render <~ Window.dimensions ~ foldp updateApp initialScene Input.appInput
 
+--main = asText <~ Input.appInput

@@ -13,16 +13,21 @@ import Maybe (..)
 
 ----- All signals and input into the program
 
+data MouseEvent = Move (Maybe (Int, Int))
+                | MoveDrag (Maybe (Int, Int))
+                | StartDrag (Maybe (Int, Int))
+                | StopDrag (Maybe ((Int, Int), (Int, Int)))
+
 type AppInput = {
     dt: Time
   , mousePos: (Float, Float)
   , mouseDown: Bool
   , mouseDragStart: Maybe (Int, Int)
   , mouseDragStop: Maybe ((Int, Int), (Int, Int))
+  , mouseEvent: MouseEvent
   , keyDir: { x: Int, y: Int }
   , winDim: (Int, Int)
   }
-
 
 appInput : Signal AppInput
 appInput =
@@ -39,9 +44,19 @@ appInput =
     mouseDownInput =
       sampleOn clockInput <| Mouse.isDown
 
+    mouseDragStart : Signal (Maybe (Int, Int))
     mouseDragStart = Drag.start
+
+    mouseDragStop : Signal (Maybe ((Int, Int), (Int, Int)))
     mouseDragStop = Drag.drop
 
+    mouseEvent =
+      merges [
+        lift Move <| dropWhen Mouse.isDown Nothing (lift Just Mouse.position)
+      , lift MoveDrag <| keepWhen Mouse.isDown (Just (0, 0)) (lift Just Mouse.position)
+      , lift StartDrag <| keepWhen Mouse.isDown (Just (0, 0)) mouseDragStart
+      , lift StopDrag mouseDragStop
+      ]
     --keyInput = Signal { x: Int, y: Int }
     keyInput =
       sampleOn clockInput Keyboard.wasd
@@ -51,7 +66,7 @@ appInput =
       sampleOn clockInput Window.dimensions
   in
     AppInput <~ clockInput ~ mouseInput ~ mouseDownInput
-              ~ mouseDragStart ~ mouseDragStop
+              ~ mouseDragStart ~ mouseDragStop ~ mouseEvent
               ~ keyInput ~ windowInput
 
 inCameraFrame : Camera.Viewport -> AppInput -> AppInput
