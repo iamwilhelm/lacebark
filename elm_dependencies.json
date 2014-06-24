@@ -6,6 +6,7 @@
     "exposed-modules": [],
     "elm-version": "0.12.3",
     "dependencies": {
+        "echaozh/elm-drag": "0.1",
         "johnpmayer/elm-linear-algebra": "1.0"
     },
     "repository": "https://github.com/USER/PROJECT.git"

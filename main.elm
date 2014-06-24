@@ -7,6 +7,11 @@ import Axes
 import Camera
 import Input
 import Gpipeline
+import Array
+import Maybe (..)
+import Drag
+
+import Mouse
 
 -- config
 
@@ -45,15 +50,8 @@ initialScene = {
 
 -- updates to specific entity types
 
-updateGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
-updateGlyph { dt } (entity, entityForm) =
-  ({ entity |
-     pos <- Vec.add entity.pos <| Vec.mulS entity.vel dt
-   },
-   entityForm)
-
-addGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
-addGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
+addNgonGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+addNgonGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   let
     newEntityForm entity depth =
       group [
@@ -64,28 +62,59 @@ addGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   in
     (entity, newEntityForm)
 
-stampGlyph : Input.AppInput -> Scene -> Scene
-stampGlyph appInput scene =
+addCircGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+addCircGlyph { dt, mousePos, mouseDown } (entity, prevEntityForm) =
   let
-    headSet = take 0 scene.glyphTools
-    tailSet = drop 0 scene.glyphTools
-    stepGlyphTools = headSet ++ (addGlyph appInput <| head tailSet) :: tail tailSet
+    newEntityForm entity depth =
+      group [
+        prevEntityForm entity depth
+      , move mousePos
+        <| filled yellow <| circle 20
+      ]
   in
-    { scene | glyphTools <- stepGlyphTools }
+    (entity, newEntityForm)
+
+
+updateGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+updateGlyph { dt } (entity, entityForm) =
+  ({ entity |
+     pos <- Vec.add entity.pos <| Vec.mulS entity.vel dt
+   },
+   entityForm)
+
+updateCurrentGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
+updateCurrentGlyph appInput ((entity, entityForm) as glyph) =
+  case appInput.mouseDragStart of
+    Just (x, y) ->
+      glyph
+    Nothing ->
+      case appInput.mouseDragStop of
+        Just ((sx, sy), (ex, ey)) ->
+          if sx == ex && sy == ey then
+            --Click
+            addCircGlyph appInput glyph
+          else
+            --Dragged
+            addNgonGlyph appInput glyph
 
 updateGlyphTools : Input.AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
-updateGlyphTools appinput glyphTools =
-  map (\glyph ->
-    updateGlyph appinput glyph
-  ) glyphTools
+updateGlyphTools appInput glyphTools =
+  Array.toList
+  <| Array.indexedMap (\i glyph ->
+    case i of
+      0 ->
+        updateGlyph appInput <| updateCurrentGlyph appInput glyph
+      _ ->
+        updateGlyph appInput glyph
+  ) <| Array.fromList glyphTools
 
 updateCursor : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
-updateCursor { mousePos, mouseDown } _ =
+updateCursor { mousePos, mouseDown, mouseDragStart } _ =
   let (entity, entityForm) =
     case mouseDown of
       True ->
         Glyph.closedPawCursor
-      _ ->
+      False ->
         Glyph.openPawCursor
   in
     ({ entity | pos <- mousePos }, entityForm)

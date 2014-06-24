@@ -8,7 +8,8 @@ import Camera
 import Util
 import Math.Matrix4
 import Math.Vector3
---import Drag
+import Drag
+import Maybe (..)
 
 ----- All signals and input into the program
 
@@ -16,6 +17,8 @@ type AppInput = {
     dt: Time
   , mousePos: (Float, Float)
   , mouseDown: Bool
+  , mouseDragStart: Maybe (Int, Int)
+  , mouseDragStop: Maybe ((Int, Int), (Int, Int))
   , keyDir: { x: Int, y: Int }
   , winDim: (Int, Int)
   }
@@ -32,23 +35,24 @@ appInput =
       sampleOn clockInput
       <| Util.floatify <~ Mouse.position
 
-    --mouseDownInput : Signal Bool
+    mouseDownInput : Signal Bool
     mouseDownInput =
-      sampleOn clockInput
-      <| dropRepeats Mouse.isDown
+      sampleOn clockInput <| Mouse.isDown
 
-    --mouseDragStart = Drag.start
-    --mouseDragDrop = Drag.drop
+    mouseDragStart = Drag.start
+    mouseDragStop = Drag.drop
 
-    --keyInput = Singal { x: Int, y: Int }
+    --keyInput = Signal { x: Int, y: Int }
     keyInput =
       sampleOn clockInput Keyboard.wasd
 
-    --windowInput : Signal (Int, Int)
+    windowInput : Signal (Int, Int)
     windowInput =
       sampleOn clockInput Window.dimensions
   in
-    AppInput <~ clockInput ~ mouseInput ~ mouseDownInput ~ keyInput ~ windowInput
+    AppInput <~ clockInput ~ mouseInput ~ mouseDownInput
+              ~ mouseDragStart ~ mouseDragStop
+              ~ keyInput ~ windowInput
 
 inCameraFrame : Camera.Viewport -> AppInput -> AppInput
 inCameraFrame viewport ({ mousePos } as appInput) =
