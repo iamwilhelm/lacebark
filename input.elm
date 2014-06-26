@@ -45,18 +45,23 @@ appInput =
       sampleOn clockInput <| Mouse.isDown
 
     mouseDragStart : Signal (Int, Int)
-    mouseDragStart = sampleOn (dropRepeats Mouse.isDown) Mouse.position
+    mouseDragStart =
+      sampleOn (dropRepeats Mouse.isDown)
+      <| sampleOn clockInput Mouse.position
 
     mouseDragStop : Signal ((Int, Int), (Int, Int))
-    mouseDragStop = let start = keepWhen Mouse.isDown (0, 0) mouseDragStart
-                        stop = Mouse.position
-                    in
-                      (,) <~ start ~ stop |> sampleOn (dropRepeats Mouse.isDown)
+    mouseDragStop =
+      let start = keepWhen Mouse.isDown (0, 0) mouseDragStart
+          stop = sampleOn clockInput Mouse.position
+      in
+        (,) <~ start ~ stop |> sampleOn (dropRepeats Mouse.isDown)
 
     mouseEvent =
       merges [
-        lift Move <| dropWhen Mouse.isDown (0, 0) Mouse.position
-      , lift MoveDrag <| keepWhen Mouse.isDown (0, 0) Mouse.position
+        lift Move <| dropWhen Mouse.isDown (0, 0)
+                  <| sampleOn clockInput Mouse.position
+      , lift MoveDrag <| keepWhen Mouse.isDown (0, 0)
+                      <| sampleOn clockInput Mouse.position
       , lift StartDrag <| keepWhen Mouse.isDown (0, 0) mouseDragStart
       , lift StopDrag mouseDragStop
       ]
