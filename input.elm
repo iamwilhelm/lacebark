@@ -33,7 +33,7 @@ appInput : Signal AppInput
 appInput =
   let
     clockInput : Signal Time
-    clockInput = lift inSeconds (fps 60)
+    clockInput = lift inSeconds (fps 15)
 
     mouseInput : Signal (Float, Float)
     mouseInput =
