@@ -16,7 +16,7 @@ import Glyph
 import Camera
 
 glyph2WorldMat : Glyph.Glyph -> Transform2D.Transform2D
-glyph2WorldMat (entity, entityForm) =
+glyph2WorldMat { entity } =
   Transform2D.multiply
     (uncurry Transform2D.translation entity.pos)
     (Transform2D.rotation (degrees entity.rot))
