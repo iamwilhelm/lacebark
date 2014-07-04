@@ -10,6 +10,8 @@ import Gpipeline
 import Array
 import Mouse
 
+import Debug
+
 -- config
 
 windowDim = (1024, 600)
@@ -24,6 +26,7 @@ type Scene = {
   , axes: Axes.Axes
   , glyphTools: [Glyph.Glyph]
   --, selectedGlyph: 0
+  --, applyingGlyph: Nothing
   }
 
 initialCamera = initialEntity
@@ -56,20 +59,28 @@ updateGlyph { dt } ({ entity } as glyph) =
       }
   }
 
+highlightGlyph : Glyph.Glyph -> Glyph.Glyph
+highlightGlyph glyph =
+  Glyph.setColr glyph yellow
+
 updateCurrentGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
-updateCurrentGlyph appInput ({ entity } as glyph) =
-  case appInput.mouseEvent of
-    Input.Move (x, y) ->
-      glyph
-    Input.MoveDrag (x, y) ->
-      glyph
-    Input.StartDrag (x, y) ->
-      glyph
-    Input.StopDrag ((sx, sy), (ex, ey)) ->
-      if (sx == ex) && (sy == ey) then
+updateCurrentGlyph appInput glyph =
+  let
+    --h = Debug.log "glyph" glyph
+    h = 3
+  in
+    case appInput.mouseEvent of
+      Input.Move (x, y) ->
         glyph
-      else
+      Input.MoveDrag (x, y) ->
         glyph
+      Input.StartDrag (x, y) ->
+        glyph
+      Input.StopDrag ((sx, sy), (ex, ey)) ->
+        if (sx == ex) && (sy == ey) then
+          highlightGlyph glyph
+        else
+          glyph
 
 updateGlyphTools : Input.AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
 updateGlyphTools appInput glyphTools =
@@ -87,7 +98,7 @@ updateCursor : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph) =
   let
     cursorGlyph =
-      case mouseof
+      case mouseDown of
         True ->
           Glyph.closedPawCursor
         False ->
@@ -114,12 +125,16 @@ updateViewport { winDim } viewport =
       dim <- Util.floatify winDim
   }
 
+
 -- updates in frames
 
 updateInViewportFrame (appInput, scene) =
   (
     appInput
-  , { scene | viewport <- updateViewport appInput scene.viewport }
+  , 
+    { scene |
+      viewport <- updateViewport appInput scene.viewport
+    }
   )
 
 updateInCameraFrame (appInput, scene) =

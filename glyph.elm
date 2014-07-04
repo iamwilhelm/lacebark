@@ -1,12 +1,14 @@
 module Glyph where
 
-import Entity (..)
+import Debug
+
+import Entity
 import G (..)
 
 -- a glyph is a combination of shapes. glyph can be composed of many other
 
 type Glyph = {
-    entity: Entity
+    entity: Entity.Entity
   , statements: [Statement]
   , history: [ [Statement] ]
   }
@@ -32,6 +34,11 @@ drawToolbar { glyphTools } =
 transformToolbar windowDim toolbar =
   move (-(fst windowDim) / 2 + 50, 0) toolbar
 
+setColr : Glyph -> Color -> Glyph
+setColr ({ entity } as glyph) colr =
+  { glyph | entity <-
+      Entity.setColr glyph.entity colr
+  }
 
 -- defining various default glyphs
 
@@ -39,11 +46,12 @@ transformToolbar windowDim toolbar =
 rectangle : Float -> Float -> Color -> Glyph
 rectangle w h colr =
   let
-    entity = { initialEntity |
+    original = Entity.initialEntity
+    entity = { original |
         colr <- colr
       , dim <- (w, h)
       }
-    statements = [ Draw NoTF (Rectangle (120, 120) blue) ]
+    statements = [ Draw NoTF (Rectangle (120, 120) green) ]
     history = [ statements ]
   in
     { entity = entity, statements = statements, history = history }
@@ -52,11 +60,12 @@ rectangle w h colr =
 circ : Float -> Color -> Glyph
 circ radius colr =
   let
-    entity = { initialEntity |
+    original = Entity.initialEntity
+    entity = { original |
         colr <- colr
       , radius <- radius
       }
-    statements = [ Draw (NoTF) (Circle 70 orange) ]
+    statements = [ Draw (NoTF) (Circle entity.radius entity.colr) ]
     history = [ statements ]
   in
     { entity = entity, statements = statements, history = history }
@@ -65,10 +74,11 @@ circ radius colr =
 club : Color -> Glyph
 club colr =
   let
+    original = Entity.initialEntity
     entity =
-      { initialEntity |
+      { original |
           colr <- colr
-      }
+        }
     statements = [
         Draw (Move (0, 60)) (Circle 40 charcoal)
       , Draw (Move (35, 0)) (Circle 40 charcoal)
@@ -82,7 +92,8 @@ club colr =
 heart : Color -> Glyph
 heart colr =
   let
-    entity = { initialEntity |
+    original = Entity.initialEntity
+    entity = { original |
         colr <- colr }
 
     statements = [
@@ -97,7 +108,8 @@ heart colr =
 diamond : Color -> Glyph
 diamond colr =
   let
-    entity = { initialEntity |
+    original = Entity.initialEntity
+    entity = { original |
         colr <- colr }
 
     statements = [
@@ -110,7 +122,7 @@ diamond colr =
 
 --arrowCursor =
 --  let
---    entity = initialEntity
+--    entity = Entity.initialEntity
 --
 --    entityForm : Entity -> Int -> Form
 --    entityForm glyph depth =
@@ -126,7 +138,7 @@ diamond colr =
 
 openPawCursor =
   let
-    entity = initialEntity
+    entity = Entity.initialEntity
     statements = [
       Draw (Compose (Rotate 20) (Move (0, 23))) (Circle 7.5 black)
     , Draw (Compose (Rotate -70) (Move (0, 23))) (Circle 7.5 black)
@@ -140,7 +152,7 @@ openPawCursor =
 
 closedPawCursor =
   let
-    entity = initialEntity
+    entity = Entity.initialEntity
     statements = [
       Draw (Compose (Rotate 20) (Move (0, 17))) (Circle 7.5 black)
     , Draw (Compose (Rotate -70) (Move (0, 17))) (Circle 7.5 black)
@@ -152,7 +164,7 @@ closedPawCursor =
     { entity = entity, statements = statements, history = [statements] }
 
 
-rectangleGlyph = rectangle 120 120 blue
+rectangleGlyph = rectangle 120 120 green
 circGlyph = circ 60 orange
 clubGlyph = club charcoal
 heartGlyph = heart red
@@ -160,7 +172,7 @@ diamondGlyph = diamond red
 
 --tentacleGlyph =
 --  let
---    entity = { initialEntity |
+--    entity = { Entity.initialEntity |
 --      colr <- yellow }
 --
 --    entityForm : Entity -> Int -> Form
@@ -178,7 +190,7 @@ diamondGlyph = diamond red
 
 --scratchGlyph =
 --  let
---    entity = initialEntity
+--    entity = Entity.initialEntity
 --    entityForm entity depth =
 --      group [
 --        include rectangleGlyph

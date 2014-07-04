@@ -20,3 +20,7 @@ initialEntity = {
   , colr = blue
   }
 
+setColr : Entity -> Color -> Entity
+setColr entity newColr =
+  { entity | colr <- newColr }
+

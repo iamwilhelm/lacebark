@@ -1,5 +1,6 @@
 module G where
 
+import Entity
 import Debug
 
 data Statement =
@@ -15,6 +16,7 @@ data Transform =
 
 data Shape =
     Rectangle (Float, Float) Color
+  | ORectangle (Float, Float) Color
   | Circle Float Color
 
 renderTexel : Statement -> Form
@@ -23,10 +25,15 @@ renderTexel statement =
     NoOp ->
       -- TODO don't know how to have an empty Glyph. use Maybe?
       filled black <| rect 1 1
-    Draw NoTF (Rectangle (x, y) colr) ->
-      filled colr <| rect x y
+    Draw NoTF (Rectangle (w, h) colr) ->
+      filled colr <| rect w h
     Draw NoTF (Circle r colr) ->
       filled colr <| circle r
+    Draw NoTF (ORectangle (w, h) colr) ->
+      group [
+        outlined (solid charcoal) (rect w h)
+      , filled colr (rect w h)
+      ]
     Draw tform shape ->
       transformTexel tform <| renderTexel (Draw NoTF shape)
 
@@ -39,6 +46,7 @@ transformTexel transform =
       rotate (degrees angle)
     Compose tf1 tf2 ->
       \x -> transformTexel tf1 <| group [transformTexel tf2 <| x]
+
 
 --include : Glyph -> Form
 --include (entity, entityForm) =
