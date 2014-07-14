@@ -197,15 +197,6 @@ render (w, h) scene =
     <| color gray
     <| uncurry collage windowDim <| renderScene scene
 
-
-data Event = Tick Input.AppInput | Click Input.AppInput
-
-event =
-  merges [
-    lift Click Input.appInput
-  , lift Tick Input.appInput
-  ]
-
 main = render <~ Window.dimensions ~ foldp updateApp initialScene Input.appInput
 
 --main = asText <~ Input.appInput
