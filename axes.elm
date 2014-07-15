@@ -3,7 +3,15 @@ module Axes where
 import Entity (..)
 
 type Axes = Entity
-initialAxes = initialEntity
+
+initialAxes = {
+    pos = (0, 0)
+  , vel = (0, 0)
+  , rot = 0
+  , dim = (10, 10)
+  , radius = 75
+  , colr = blue
+  }
 
 data AxesDirection = XAxis | YAxis
 

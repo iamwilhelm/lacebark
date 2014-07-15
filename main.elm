@@ -29,23 +29,37 @@ type Scene = {
   --, applyingGlyph: Nothing
   }
 
-initialCamera = initialEntity
+initialCamera = {
+    pos = (0, 0)
+  , vel = (0, 0)
+  , rot = 0
+  , dim = (10, 10)
+  , radius = 75
+  , colr = blue
+  }
 
-initialViewport = initialEntity
+initialViewport = {
+    pos = (0, 0)
+  , vel = (0, 0)
+  , rot = 0
+  , dim = (10, 10)
+  , radius = 75
+  , colr = blue
+  }
 
 initialScene = {
     camera = initialCamera
   , viewport = initialViewport
-  , cursor = Glyph.openPawCursor
+  , cursor = Glyph.rectangleGlyph --Glyph.openPawCursor
   , axes = Axes.initialAxes
   , glyphTools = [
     --  Glyph.scratchGlyph
     --, Glyph.tentacleGlyph
       Glyph.rectangleGlyph
-    , Glyph.circGlyph
-    , Glyph.clubGlyph
-    , Glyph.heartGlyph
-    , Glyph.diamondGlyph
+    --, Glyph.circGlyph
+    --, Glyph.clubGlyph
+    --, Glyph.heartGlyph
+    --, Glyph.diamondGlyph
     ]
   }
 
@@ -71,6 +85,7 @@ updateCurrentGlyph appInput glyph =
   in
     case appInput.mouseEvent of
       Input.Move (x, y) ->
+        --Glyph.setPos glyph (toFloat x - 100) -(toFloat y - 100)
         glyph
       Input.MoveDrag (x, y) ->
         glyph
@@ -100,9 +115,11 @@ updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph)
     cursorGlyph =
       case mouseDown of
         True ->
-          Glyph.closedPawCursor
+          --Glyph.closedPawCursor
+          Glyph.rectangleGlyph
         False ->
-          Glyph.openPawCursor
+          --Glyph.openPawCursor
+          Glyph.rectangleGlyph
     newEntity = cursorGlyph.entity
     updatedEntity = { entity | pos <- mousePos }
   in
@@ -148,6 +165,11 @@ updateInCameraFrame (appInput, scene) =
 
 updateInWorldFrame (appInput, scene) =
   let
+    --c = Debug.log "camera" scene.camera
+    --v = Debug.log "viewport" scene.viewport
+    --a = Debug.log "axes" scene.axes
+    --g = Debug.log "glyph" scene.glyphTools
+
     inFrameInput = Input.inWorldFrame scene.camera appInput
   in
     (
