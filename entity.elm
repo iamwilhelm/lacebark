@@ -37,3 +37,7 @@ setPos : Entity -> Float -> Float -> Entity
 setPos entity x y =
   { entity | pos <- (x, y) }
 
+setDim : Entity -> Float -> Float -> Entity
+setDim entity w h =
+  { entity | dim <- (w, h) }
+

@@ -104,6 +104,12 @@ setPos ({ entity } as glyph) x y =
     Entity.setPos glyph.entity x y
   }
 
+setDim : Glyph -> Float -> Float -> Glyph
+setDim ({ entity } as glyph) w h =
+  { glyph | entity <-
+    Entity.setDim glyph.entity w h
+  }
+
 -- defining various default glyphs
 
 

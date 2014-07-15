@@ -85,10 +85,10 @@ updateCurrentGlyph appInput glyph =
   in
     case appInput.mouseEvent of
       Input.Move (x, y) ->
-        --Glyph.setPos glyph (toFloat x - 100) -(toFloat y - 100)
         glyph
       Input.MoveDrag (x, y) ->
-        glyph
+        Glyph.setDim glyph (toFloat x - 100) -(toFloat y - 100)
+        --glyph
       Input.StartDrag (x, y) ->
         glyph
       Input.StopDrag ((sx, sy), (ex, ey)) ->
