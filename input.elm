@@ -56,6 +56,7 @@ appInput =
       in
         (,) <~ start ~ stop |> sampleOn (dropRepeats Mouse.isDown)
 
+    -- TODO transform mouse position in mouse reverse transformations
     mouseEvent =
       merges [
         lift Move <| dropWhen Mouse.isDown (0, 0)
