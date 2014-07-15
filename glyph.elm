@@ -24,6 +24,7 @@ data Term =
   | Magnification Float Float
   | SpreadSheet Int Int
   | EntityOffset Float Float
+  | EntityPos
 
 
 compile : Glyph -> Statement -> Form
@@ -36,6 +37,8 @@ compile glyph statement =
       group <| map (\statement -> compile glyph statement) statements
     Move (Pos x y) statement ->
       group [move (x, y) <| compile glyph statement]
+    Move EntityPos statement ->
+      group [move glyph.entity.pos (compile glyph statement)]
     Move (EntityOffset x y) statement ->
       group [move (Vec.add glyph.entity.pos (x, y)) (compile glyph statement)]
     Rotate (Rotation r) statement ->
