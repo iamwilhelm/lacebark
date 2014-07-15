@@ -183,10 +183,10 @@ renderScene scene =
     Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene
   ]
   <| Gpipeline.renderInWorldFrame (head scene.glyphTools) [
+    Axes.draw scene.axes
   ]
   <| [
-    Axes.draw scene.axes
-  , Glyph.draw <| head scene.glyphTools
+    Glyph.draw <| head scene.glyphTools
   ]
 
 
