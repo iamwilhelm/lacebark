@@ -25,6 +25,7 @@ data Term =
   | SpreadSheet Int Int
   | EntityOffset Float Float
   | EntityPos
+  | EntityDim
 
 
 compile : Glyph -> Statement -> Form
@@ -57,6 +58,8 @@ compileContour { entity } contour =
       filled colr <| rect w h
     Rectangle (Radius r) colr ->
       filled colr <| rect (r * sqrt 2) (r * sqrt 2)
+    Rectangle EntityDim colr ->
+      filled colr <| uncurry rect entity.dim
     Circle (Radius r) colr ->
       filled colr <| circle r
 
@@ -116,14 +119,14 @@ rectangle w h colr =
       , colr = colr
       }
     statements = [
-      Block [
-        Draw (Rectangle (Size 120 120) entity.colr)
+      Move (Pos 0 50) (Block [
+        Draw (Rectangle EntityDim entity.colr)
       , Draw (Circle (Radius 30) orange)
-      , Move (EntityOffset 0 60) (Block [
+      , Move (Pos 60 0) (Block [
           Draw (Rectangle (Size 80 20) blue)
         , Draw (Rectangle (Size 20 80) red)
         ])
-      ]
+      ])
     ]
     history = [ statements ]
   in
