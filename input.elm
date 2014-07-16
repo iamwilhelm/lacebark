@@ -13,17 +13,17 @@ import Maybe (..)
 
 ----- All signals and input into the program
 
-data MouseEvent = Move (Int, Int)
-                | MoveDrag (Int, Int)
-                | StartDrag (Int, Int)
-                | StopDrag ((Int, Int), (Int, Int))
+data MouseEvent = Move (Float, Float)
+                | MoveDrag (Float, Float)
+                | StartDrag (Float, Float)
+                | StopDrag ((Float, Float), (Float, Float))
 
 type AppInput = {
     dt: Time
   , mousePos: (Float, Float)
   , mouseDown: Bool
-  , mouseDragStart: (Int, Int)
-  , mouseDragStop: ((Int, Int), (Int, Int))
+  , mouseDragStart: (Float, Float)
+  , mouseDragStop: ((Float, Float), (Float, Float))
   , mouseEvent: MouseEvent
   , keyDir: { x: Int, y: Int }
   , winDim: (Int, Int)
@@ -44,26 +44,26 @@ appInput =
     mouseDownInput =
       sampleOn clockInput <| Mouse.isDown
 
-    mouseDragStart : Signal (Int, Int)
+    mouseDragStart : Signal (Float, Float)
     mouseDragStart =
       sampleOn (dropRepeats Mouse.isDown)
-      <| sampleOn clockInput Mouse.position
+      <| sampleOn clockInput <| Util.floatify <~ Mouse.position
 
-    mouseDragStop : Signal ((Int, Int), (Int, Int))
+    mouseDragStop : Signal ((Float, Float), (Float, Float))
     mouseDragStop =
       let start = keepWhen Mouse.isDown (0, 0) mouseDragStart
-          stop = sampleOn clockInput Mouse.position
+          stop = sampleOn clockInput <| Util.floatify <~ Mouse.position
       in
         (,) <~ start ~ stop |> sampleOn (dropRepeats Mouse.isDown)
 
     -- TODO transform mouse position in mouse reverse transformations
     mouseEvent =
       merges [
-        lift Move <| dropWhen Mouse.isDown (0, 0)
-                  <| sampleOn clockInput Mouse.position
-      , lift MoveDrag <| keepWhen Mouse.isDown (0, 0)
-                      <| sampleOn clockInput Mouse.position
-      , lift StartDrag <| keepWhen Mouse.isDown (0, 0) mouseDragStart
+        lift Move <| dropWhen Mouse.isDown (0.0, 0.0)
+                  <| sampleOn clockInput <| Util.floatify <~ Mouse.position
+      , lift MoveDrag <| keepWhen Mouse.isDown (0.0, 0.0)
+                      <| sampleOn clockInput <| Util.floatify <~ Mouse.position
+      , lift StartDrag <| keepWhen Mouse.isDown (0.0, 0.0) mouseDragStart
       , lift StopDrag mouseDragStop
       ]
     --keyInput = Signal { x: Int, y: Int }
@@ -79,8 +79,24 @@ appInput =
               ~ keyInput ~ windowInput
 
 inCameraFrame : Camera.Viewport -> AppInput -> AppInput
-inCameraFrame viewport ({ mousePos } as appInput) =
-  { appInput - mousePos | mousePos = mouseInCameraFrame viewport mousePos }
+inCameraFrame viewport ({ mousePos, mouseEvent } as appInput) =
+  let
+    newMouseEvent =
+      case mouseEvent of
+        Move pos ->
+          Move <| mouseInCameraFrame viewport pos
+        MoveDrag pos ->
+          MoveDrag <| mouseInCameraFrame viewport pos
+        StartDrag pos ->
+          StartDrag <| mouseInCameraFrame viewport pos
+        StopDrag (startPos, stopPos) ->
+          StopDrag <| (,)
+            (mouseInCameraFrame viewport startPos)
+            (mouseInCameraFrame viewport stopPos)
+  in
+    { appInput | mousePos <- mouseInCameraFrame viewport mousePos
+      , mouseEvent <- newMouseEvent
+    }
 
 
 inWorldFrame : Camera.Camera -> AppInput -> AppInput
