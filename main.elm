@@ -73,17 +73,13 @@ updateGlyph { dt } ({ entity } as glyph) =
       }
   }
 
-highlightGlyph : Glyph.Glyph -> Glyph.Glyph
-highlightGlyph glyph =
-  Glyph.setColr glyph yellow
-
 updateCurrentGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCurrentGlyph appInput glyph =
   case appInput.mouseEvent of
     Input.Move (x, y) ->
       glyph
     Input.MoveDrag (x, y) ->
-      glyph
+      Glyph.setPos glyph x y
     Input.StartDrag (x, y) ->
       glyph
     Input.StopDrag ((sx, sy), (ex, ey)) ->
