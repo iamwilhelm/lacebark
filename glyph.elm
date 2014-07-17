@@ -125,14 +125,12 @@ rectangle w h colr =
       , colr = colr
       }
     statements = [
-      Move (Pos 0 50) (Block [
         Draw (Rectangle EntityDim entity.colr)
       , Draw (Circle (Radius 30) orange)
       , Move (Pos 60 0) (Block [
           Draw (Rectangle (Size 80 20) blue)
         , Draw (Rectangle (Size 20 80) red)
         ])
-      ])
     ]
     history = [ statements ]
   in
@@ -218,32 +216,55 @@ rectangle w h colr =
 --    (entity, entityForm)
 
 
---openPawCursor =
---  let
---    entity = Entity.initialEntity
---    statements = [
---      Draw (Compose (Rotate 20) (Move (0, 23))) (Circle 7.5 black)
---    , Draw (Compose (Rotate -70) (Move (0, 23))) (Circle 7.5 black)
---    , Draw (Compose (Rotate -25) (Move (0, 23))) (Circle 7.5 black)
---    , Draw (Compose (Rotate 85) (Move (0, 23))) (Circle 7.5 black)
---    , Draw NoTF (Circle 18 black)
---    ]
---  in
---    { entity = entity, statements = statements, history = [statements] }
---
---
---closedPawCursor =
---  let
---    entity = Entity.initialEntity
---    statements = [
---      Draw (Compose (Rotate 20) (Move (0, 17))) (Circle 7.5 black)
---    , Draw (Compose (Rotate -70) (Move (0, 17))) (Circle 7.5 black)
---    , Draw (Compose (Rotate -25) (Move (0, 17))) (Circle 7.5 black)
---    , Draw (Compose (Rotate 85) (Move (0, 17))) (Circle 7.5 black)
---    , Draw NoTF (Circle 18 black)
---    ]
---  in
---    { entity = entity, statements = statements, history = [statements] }
+openPawCursor =
+  let
+    entity = {
+        pos = (0, 0)
+      , vel = (0, 0)
+      , rot = 0
+      , dim = (1, 1)
+      , radius = 5
+      , colr = black
+      }
+    statements = [
+      Rotate (Rotation 20) (Move (Pos 0 23) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Rotate (Rotation -70) (Move (Pos 0 23) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Rotate (Rotation -25) (Move (Pos 0 23) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Rotate (Rotation 85) (Move (Pos 0 23) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Draw (Circle (Radius 18) black)
+    ]
+  in
+    { entity = entity, statements = statements, history = [statements] }
+
+
+closedPawCursor =
+  let
+    entity = Entity.initialEntity
+    statements = [
+      Rotate (Rotation 20) (Move (Pos 0 17) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Rotate (Rotation -70) (Move (Pos 0 17) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Rotate (Rotation -25) (Move (Pos 0 17) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Rotate (Rotation 85) (Move (Pos 0 17) (
+        Draw (Circle (Radius 7.5) black)
+      ))
+    , Draw (Circle (Radius 18) black)
+    ]
+  in
+    { entity = entity, statements = statements, history = [statements] }
 
 
 rectangleGlyph = rectangle 120 120 purple

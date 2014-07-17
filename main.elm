@@ -79,22 +79,18 @@ highlightGlyph glyph =
 
 updateCurrentGlyph : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCurrentGlyph appInput glyph =
-  let
-    --h = Debug.log "glyph" glyph
-    h = 3
-  in
-    case appInput.mouseEvent of
-      Input.Move (x, y) ->
+  case appInput.mouseEvent of
+    Input.Move (x, y) ->
+      glyph
+    Input.MoveDrag (x, y) ->
+      glyph
+    Input.StartDrag (x, y) ->
+      glyph
+    Input.StopDrag ((sx, sy), (ex, ey)) ->
+      if (sx == ex) && (sy == ey) then
+        highlightGlyph glyph
+      else
         glyph
-      Input.MoveDrag (x, y) ->
-        Glyph.setDim glyph x y
-      Input.StartDrag (x, y) ->
-        glyph
-      Input.StopDrag ((sx, sy), (ex, ey)) ->
-        if (sx == ex) && (sy == ey) then
-          highlightGlyph glyph
-        else
-          glyph
 
 updateGlyphTools : Input.AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
 updateGlyphTools appInput glyphTools =
@@ -114,11 +110,9 @@ updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph)
     cursorGlyph =
       case mouseDown of
         True ->
-          --Glyph.closedPawCursor
-          Glyph.rectangleGlyph
+          Glyph.closedPawCursor
         False ->
-          --Glyph.openPawCursor
-          Glyph.rectangleGlyph
+          Glyph.openPawCursor
     newEntity = cursorGlyph.entity
     updatedEntity = { entity | pos <- mousePos }
   in
@@ -204,10 +198,10 @@ renderScene scene =
     Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene
   ]
   <| Gpipeline.renderInWorldFrame (head scene.glyphTools) [
-    Axes.draw scene.axes
   ]
   <| [
-    Glyph.draw <| head scene.glyphTools
+    Axes.draw scene.axes
+  , Glyph.draw <| head scene.glyphTools
   ]
 
 
