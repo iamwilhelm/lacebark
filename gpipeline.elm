@@ -24,9 +24,11 @@ glyph2WorldMat { entity } =
 -- [Forms in this frame already] ->
 -- [Forms that need to be transformed to this frame] ->
 -- [Resulting Forms in this frame]
+-- FIXME the bug is that we're using the same glyph entity pos for all childFrameForms
+-- so if a glyph is moving, so will the axes
 renderInWorldFrame : Glyph.Glyph -> [Form] -> [Form] -> [Form]
 renderInWorldFrame glyph inFrameForms childFrameForms =
-  groupTransform (glyph2WorldMat glyph) childFrameForms :: inFrameForms
+  (groupTransform (glyph2WorldMat glyph) childFrameForms) :: inFrameForms
 
 world2CameraMat : Camera.Camera -> Transform2D.Transform2D
 world2CameraMat camera =
@@ -37,7 +39,7 @@ world2CameraMat camera =
 renderInCameraFrame : Camera.Camera -> [Form] -> [Form] -> [Form]
 renderInCameraFrame camera inFrameForms childFrameForms =
   -- TODO clip all objects outside the camera
-  groupTransform (world2CameraMat camera) childFrameForms :: inFrameForms
+  (groupTransform (world2CameraMat camera) childFrameForms) :: inFrameForms
 
 camera2ViewportMat : Transform2D.Transform2D
 camera2ViewportMat =
