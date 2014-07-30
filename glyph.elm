@@ -16,6 +16,7 @@ data Contour =
     Rectangle Term Color
   | Circle Term Color
 
+-- Change Size, Pos, and Magnification to Tuple?
 data Term =
     Size Float Float
   | Radius Float
@@ -36,20 +37,36 @@ compile glyph statement =
       filled black <| rect 1 1
     Block statements ->
       group <| map (\statement -> compile glyph statement) statements
-    Move (Pos x y) statement ->
-      group [move (x, y) <| compile glyph statement]
-    Move EntityPos statement ->
-      group [move glyph.entity.pos (compile glyph statement)]
-    Move (EntityOffset x y) statement ->
-      group [move (Vec.add glyph.entity.pos (x, y)) (compile glyph statement)]
-    Rotate (Rotation r) statement ->
-      rotate (degrees r) <| compile glyph statement
+    Move term statement ->
+      -- TODO maybe group rotate instead of move, as it occurs less to perserve order of
+      -- operations?
+      group [move (compileMoveTerm glyph term) <| compile glyph statement]
+    Rotate term statement ->
+      rotate (compileRotationTerm glyph term) <| compile glyph statement
     Scale (Magnification x y) statement ->
       groupTransform
         (Transform2D.multiply (Transform2D.scaleX x) (Transform2D.scaleY y))
         [compile glyph statement]
     Draw contour ->
       compileContour glyph contour
+
+compileMoveTerm : Glyph -> Term -> (Float, Float)
+compileMoveTerm glyph term =
+  case term of
+    Pos x y ->
+      (x, y)
+    EntityPos ->
+      glyph.entity.pos
+    EntityOffset x y ->
+      Vec.add glyph.entity.pos (x, y)
+    --_ ->
+    --  raise error
+
+compileRotationTerm : Glyph -> Term -> Float
+compileRotationTerm glyph term =
+  case term of
+    Rotation r ->
+      degrees r
 
 compileContour : Glyph -> Contour -> Form
 compileContour { entity } contour =
