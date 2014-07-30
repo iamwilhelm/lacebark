@@ -84,7 +84,7 @@ updateCurrentGlyph appInput glyph =
       glyph
     Input.StopDrag ((sx, sy), (ex, ey)) ->
       if (sx == ex) && (sy == ey) then
-        highlightGlyph glyph
+        Glyph.setPos glyph sx sy
       else
         glyph
 
