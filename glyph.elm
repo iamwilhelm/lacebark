@@ -65,7 +65,7 @@ compileMoveTerm glyph term =
     EntityOffset x y ->
       Vec.add glyph.entity.pos (x, y)
     BindN x y ->
-      (x, y + Dict.getOrElse 0 "n" glyph.binding)
+      (x, y + getVar glyph "n")
     --_ ->
     --  raise error
 
@@ -100,6 +100,9 @@ setVar glyph name value =
   { glyph |
       binding <- Dict.insert name value glyph.binding
   }
+
+getVar glyph name =
+  Dict.getOrElse 0 name glyph.binding
 
 -- drawing functions without coordinate transforms
 
