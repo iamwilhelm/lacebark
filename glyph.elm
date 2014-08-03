@@ -20,9 +20,7 @@ data Contour =
 
 -- Change Size, Pos, and Magnification to Tuple?
 data Term =
-    Size Float Float
-  | Radius Float
-  | Pos Float Float
+    Pos Float Float
   | Rotation Float
   | Magnification Float Float
   | SpreadSheet Int Int
@@ -30,6 +28,8 @@ data Term =
   | EntityPos
   | EntityDim
   | BindN Float Float
+  | Tup Float Float
+  | Num Float
 
 compile : Glyph -> Statement -> Form
 compile glyph statement =
@@ -58,14 +58,14 @@ compile glyph statement =
 compileMoveTerm : Glyph -> Term -> (Float, Float)
 compileMoveTerm glyph term =
   case term of
-    Pos x y ->
-      (x, y)
     EntityPos ->
       glyph.entity.pos
     EntityOffset x y ->
       Vec.add glyph.entity.pos (x, y)
     BindN x y ->
       (x, y + getVar glyph "n")
+    Tup x y ->
+      (x, y)
     --_ ->
     --  raise error
 
@@ -74,17 +74,19 @@ compileRotationTerm glyph term =
   case term of
     Rotation r ->
       degrees r
+    Num r ->
+      r
 
 compileContour : Glyph -> Contour -> Form
 compileContour { entity } contour =
   case contour of
-    Rectangle (Size w h) colr ->
+    Rectangle (Tup w h) colr ->
       filled colr <| rect w h
-    Rectangle (Radius r) colr ->
+    Rectangle (Num r) colr ->
       filled colr <| rect (r * sqrt 2) (r * sqrt 2)
     Rectangle EntityDim colr ->
       filled colr <| uncurry rect entity.dim
-    Circle (Radius r) colr ->
+    Circle (Num r) colr ->
       filled colr <| circle r
 
 -- a glyph is a combination of shapes. glyph can be composed of many other
@@ -159,11 +161,11 @@ rectangle w h colr =
       }
     statements = [
         Draw (Rectangle EntityDim entity.colr)
-      , Draw (Circle (Radius 30) orange)
+      , Draw (Circle (Num 30) orange)
       , Map (Block [
           Move (BindN 60 -100) (Block [
-            Draw (Rectangle (Size 40 20) blue)
-          , Draw (Rectangle (Size 20 40) red)
+            Draw (Rectangle (Tup 40 20) blue)
+          , Draw (Rectangle (Tup 20 40) red)
           ])
         ]) [0, 80, 160, 240, 320]
     ]
@@ -263,19 +265,19 @@ openPawCursor =
       , colr = black
       }
     statements = [
-      Rotate (Rotation 20) (Move (Pos 0 23) (
-        Draw (Circle (Radius 7.5) black)
+      Rotate (Rotation 20) (Move (Tup 0 23) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -70) (Move (Pos 0 23) (
-        Draw (Circle (Radius 7.5) black)
+    , Rotate (Rotation -70) (Move (Tup 0 23) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -25) (Move (Pos 0 23) (
-        Draw (Circle (Radius 7.5) black)
+    , Rotate (Rotation -25) (Move (Tup 0 23) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation 85) (Move (Pos 0 23) (
-        Draw (Circle (Radius 7.5) black)
+    , Rotate (Rotation 85) (Move (Tup 0 23) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Draw (Circle (Radius 18) black)
+    , Draw (Circle (Num 18) black)
     ]
     binding = Dict.empty
   in
@@ -287,19 +289,19 @@ closedPawCursor =
   let
     entity = Entity.initialEntity
     statements = [
-      Rotate (Rotation 20) (Move (Pos 0 17) (
-        Draw (Circle (Radius 7.5) black)
+      Rotate (Rotation 20) (Move (Tup 0 17) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -70) (Move (Pos 0 17) (
-        Draw (Circle (Radius 7.5) black)
+    , Rotate (Rotation -70) (Move (Tup 0 17) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -25) (Move (Pos 0 17) (
-        Draw (Circle (Radius 7.5) black)
+    , Rotate (Rotation -25) (Move (Tup 0 17) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation 85) (Move (Pos 0 17) (
-        Draw (Circle (Radius 7.5) black)
+    , Rotate (Rotation 85) (Move (Tup  0 17) (
+        Draw (Circle (Num 7.5) black)
       ))
-    , Draw (Circle (Radius 18) black)
+    , Draw (Circle (Num 18) black)
     ]
     binding = Dict.empty
   in
