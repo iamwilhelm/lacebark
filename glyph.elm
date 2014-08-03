@@ -20,16 +20,14 @@ data Contour =
 
 -- Change Size, Pos, and Magnification to Tuple?
 data Term =
-    Pos Float Float
-  | Rotation Float
-  | Magnification Float Float
-  | SpreadSheet Int Int
+    Tup Float Float
+  | Num Float
+  | Degrees Float
+  | Ref Int Int
   | EntityOffset Float Float
   | EntityPos
   | EntityDim
   | BindN Float Float
-  | Tup Float Float
-  | Num Float
 
 compile : Glyph -> Statement -> Form
 compile glyph statement =
@@ -45,7 +43,7 @@ compile glyph statement =
       group [move (compileMoveTerm glyph term) <| compile glyph statement]
     Rotate term statement ->
       rotate (compileRotationTerm glyph term) <| compile glyph statement
-    Scale (Magnification x y) statement ->
+    Scale (Tup x y) statement ->
       groupTransform
         (Transform2D.multiply (Transform2D.scaleX x) (Transform2D.scaleY y))
         [compile glyph statement]
@@ -72,7 +70,7 @@ compileMoveTerm glyph term =
 compileRotationTerm : Glyph -> Term -> Float
 compileRotationTerm glyph term =
   case term of
-    Rotation r ->
+    Degrees r ->
       degrees r
     Num r ->
       r
@@ -160,10 +158,10 @@ rectangle w h colr =
       , colr = colr
       }
     statements = [
-        Draw (Rectangle EntityDim entity.colr)
+        Rotate (Degrees 30) (Draw (Rectangle EntityDim entity.colr))
       , Draw (Circle (Num 30) orange)
       , Map (Block [
-          Move (BindN 60 -100) (Block [
+          Move (Tup 60 -100) (Block [
             Draw (Rectangle (Tup 40 20) blue)
           , Draw (Rectangle (Tup 20 40) red)
           ])
@@ -265,16 +263,16 @@ openPawCursor =
       , colr = black
       }
     statements = [
-      Rotate (Rotation 20) (Move (Tup 0 23) (
+      Rotate (Degrees 20) (Move (Tup 0 23) (
         Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -70) (Move (Tup 0 23) (
+    , Rotate (Degrees -70) (Move (Tup 0 23) (
         Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -25) (Move (Tup 0 23) (
+    , Rotate (Degrees -25) (Move (Tup 0 23) (
         Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation 85) (Move (Tup 0 23) (
+    , Rotate (Degrees 85) (Move (Tup 0 23) (
         Draw (Circle (Num 7.5) black)
       ))
     , Draw (Circle (Num 18) black)
@@ -289,16 +287,16 @@ closedPawCursor =
   let
     entity = Entity.initialEntity
     statements = [
-      Rotate (Rotation 20) (Move (Tup 0 17) (
+      Rotate (Degrees 20) (Move (Tup 0 17) (
         Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -70) (Move (Tup 0 17) (
+    , Rotate (Degrees -70) (Move (Tup 0 17) (
         Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation -25) (Move (Tup 0 17) (
+    , Rotate (Degrees -25) (Move (Tup 0 17) (
         Draw (Circle (Num 7.5) black)
       ))
-    , Rotate (Rotation 85) (Move (Tup  0 17) (
+    , Rotate (Degrees 85) (Move (Tup  0 17) (
         Draw (Circle (Num 7.5) black)
       ))
     , Draw (Circle (Num 18) black)
