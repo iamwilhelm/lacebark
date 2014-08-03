@@ -3,6 +3,7 @@ module Glyph where
 import Transform2D
 import Vec
 import Entity
+import Dict
 
 data Statement =
     NoOp
@@ -11,6 +12,7 @@ data Statement =
   | Rotate Term Statement
   | Scale Term Statement
   | Draw Contour
+  | Map Statement [Float]
 
 data Contour =
     Rectangle Term Color
@@ -27,7 +29,7 @@ data Term =
   | EntityOffset Float Float
   | EntityPos
   | EntityDim
-
+  | BindN Float Float
 
 compile : Glyph -> Statement -> Form
 compile glyph statement =
@@ -49,6 +51,9 @@ compile glyph statement =
         [compile glyph statement]
     Draw contour ->
       compileContour glyph contour
+    Map statement list ->
+      group <| map (\n -> compile (setVar glyph "n" n) statement) list
+
 
 compileMoveTerm : Glyph -> Term -> (Float, Float)
 compileMoveTerm glyph term =
@@ -59,6 +64,8 @@ compileMoveTerm glyph term =
       glyph.entity.pos
     EntityOffset x y ->
       Vec.add glyph.entity.pos (x, y)
+    BindN x y ->
+      (x, y + Dict.getOrElse 0 "n" glyph.binding)
     --_ ->
     --  raise error
 
@@ -86,6 +93,12 @@ type Glyph = {
     entity: Entity.Entity
   , statements: [Statement]
   , history: [ [Statement] ]
+  , binding: Dict.Dict String Float
+  }
+
+setVar glyph name value =
+  { glyph |
+      binding <- Dict.insert name value glyph.binding
   }
 
 -- drawing functions without coordinate transforms
@@ -144,14 +157,17 @@ rectangle w h colr =
     statements = [
         Draw (Rectangle EntityDim entity.colr)
       , Draw (Circle (Radius 30) orange)
-      , Move (Pos 60 0) (Block [
-          Draw (Rectangle (Size 80 20) blue)
-        , Draw (Rectangle (Size 20 80) red)
-        ])
+      , Map (Block [
+          Move (BindN 60 -100) (Block [
+            Draw (Rectangle (Size 40 20) blue)
+          , Draw (Rectangle (Size 20 40) red)
+          ])
+        ]) [0, 80, 160, 240, 320]
     ]
     history = [ statements ]
+    binding = Dict.empty
   in
-    { entity = entity, statements = statements, history = history }
+    { entity = entity, statements = statements, history = history, binding = binding }
 
 
 --circ : Float -> Color -> Glyph
@@ -258,8 +274,10 @@ openPawCursor =
       ))
     , Draw (Circle (Radius 18) black)
     ]
+    binding = Dict.empty
   in
-    { entity = entity, statements = statements, history = [statements] }
+    { entity = entity, statements = statements
+    , history = [statements], binding = binding }
 
 
 closedPawCursor =
@@ -280,8 +298,10 @@ closedPawCursor =
       ))
     , Draw (Circle (Radius 18) black)
     ]
+    binding = Dict.empty
   in
-    { entity = entity, statements = statements, history = [statements] }
+    { entity = entity, statements = statements,
+      history = [statements], binding = binding }
 
 
 rectangleGlyph = rectangle 120 120 purple
