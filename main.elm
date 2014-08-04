@@ -209,6 +209,5 @@ render (w, h) scene =
     <| uncurry collage windowDim <| renderScene scene
 
 main = render <~ Window.dimensions ~ foldp updateApp initialScene Input.appInput
-
 --main = asText <~ Input.appInput
 
