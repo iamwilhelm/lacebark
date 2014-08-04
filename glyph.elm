@@ -30,6 +30,9 @@ data Term =
   | EntityPos
   | EntityDim
   | Add Term Term
+  | Sub Term Term
+  | Mul Term Term
+  | Div Term Term
   | N
   | M
 
@@ -93,6 +96,12 @@ compileNumTerm glyph term =
       getVar glyph "m"
     Add term1 term2 ->
       compileNumTerm glyph term1 + compileNumTerm glyph term2
+    Sub term1 term2 ->
+      compileNumTerm glyph term1 - compileNumTerm glyph term2
+    Mul term1 term2 ->
+      compileNumTerm glyph term1 * compileNumTerm glyph term2
+    Div term1 term2 ->
+      compileNumTerm glyph term1 / compileNumTerm glyph term2
 
 compileContour : Glyph -> Contour -> Form
 compileContour ({ entity } as glyph) contour =
@@ -181,11 +190,11 @@ rectangle w h colr =
           )
       , Draw (Circle (F 30) orange)
       , Map (Proc M [
-          Move (Tup (F 60) (Add (F -100) M)) (Block [
+          Move (Tup (F 60) (Mul (F 50) M)) (Block [
             Draw (Rectangle (Tup (F 40) (F 20)) blue)
           , Draw (Rectangle (Tup (F 20) (F 40)) red)
           ])
-        ]) [0, 80, 160, 240, 320]
+        ]) [1..5]
     ]
     history = [ statements ]
     binding = Dict.empty
