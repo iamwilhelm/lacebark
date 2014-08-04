@@ -4,6 +4,7 @@ import Transform2D
 import Vec
 import Entity
 import Dict
+import Debug
 
 data Statement =
     NoOp
@@ -12,7 +13,7 @@ data Statement =
   | Rotate Term Statement
   | Scale Term Statement
   | Draw Contour
-  | Map Statement [Float]
+  | Map Term [Statement] [Float]
 
 data Contour =
     Rectangle Term Color
@@ -27,8 +28,10 @@ data Term =
   | EntityOffset Float Float
   | EntityPos
   | EntityDim
-  | N
   | Add Term Term
+  | N
+  | M
+
 
 compile : Glyph -> Statement -> Form
 compile glyph statement =
@@ -51,9 +54,19 @@ compile glyph statement =
         [compile glyph statement]
     Draw contour ->
       compileContour glyph contour
-    Map statement list ->
-      group <| map (\n -> compile (setVar glyph "n" n) statement) list
+    Map itername statements list ->
+      let
+        iterkey = (compileVarName glyph itername)
+      in
+        group
+          <| concatMap (\n ->
+            map (\statement -> compile (setVar glyph iterkey n) statement) statements
+          ) list
 
+compileVarName glyph varname =
+  case varname of
+    N -> "n"
+    M -> "m"
 
 compileTupTerm : Glyph -> Term -> (Float, Float)
 compileTupTerm glyph term =
@@ -74,6 +87,8 @@ compileNumTerm glyph term =
       r
     N ->
       getVar glyph "n"
+    M ->
+      getVar glyph "m"
     Add term1 term2 ->
       compileNumTerm glyph term1 + compileNumTerm glyph term2
 
@@ -163,12 +178,12 @@ rectangle w h colr =
             Draw (Rectangle EntityDim entity.colr))
           )
       , Draw (Circle (F 30) orange)
-      , Map (Block [
-          Move (Tup (F 60) (Add (F -100) N)) (Block [
+      , Map M [
+          Move (Tup (F 60) (Add (F -100) M)) (Block [
             Draw (Rectangle (Tup (F 40) (F 20)) blue)
           , Draw (Rectangle (Tup (F 20) (F 40)) red)
           ])
-        ]) [0, 80, 160, 240, 320]
+        ] [0, 80, 160, 240, 320]
     ]
     history = [ statements ]
     binding = Dict.empty
