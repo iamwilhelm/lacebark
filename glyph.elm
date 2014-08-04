@@ -39,8 +39,6 @@ compile glyph statement =
     Block statements ->
       group <| map (\statement -> compile glyph statement) statements
     Move term statement ->
-      -- TODO maybe group rotate instead of move, as it occurs less to perserve order of
-      -- operations?
       group [move (compileTupTerm glyph term) <| compile glyph statement]
     Rotate term statement ->
       rotate (compileNumTerm glyph term) <| compile glyph statement
@@ -160,7 +158,10 @@ rectangle w h colr =
       , colr = colr
       }
     statements = [
-        Rotate (Degrees 30) (Draw (Rectangle EntityDim entity.colr))
+        Rotate (Degrees 60) (
+          Move (Tup (F 200) (F 0)) (
+            Draw (Rectangle EntityDim entity.colr))
+          )
       , Draw (Circle (F 30) orange)
       , Map (Block [
           Move (Tup (F 60) (Add (F -100) N)) (Block [
