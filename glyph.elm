@@ -4,7 +4,6 @@ import Transform2D
 import Vec
 import Entity
 import Dict
-import Debug
 
 data Statement =
     NoOp
@@ -63,10 +62,9 @@ compile glyph statement =
         iterkey = compileVarName glyph itername
         setKey = setVar glyph iterkey
       in
-        group
-          <| concatMap (\n ->
-            map (\statement -> compile (setKey n) statement) statements
-          ) list
+        group <| concatMap (\n ->
+          map (\statement -> compile (setKey n) statement) statements
+        ) list
 
 compileVarName glyph varname =
   case varname of
@@ -191,7 +189,7 @@ rectangle w h colr =
       , Draw (Circle (F 30) orange)
       , Map (Proc M [
           Move (Tup (F 60) (Mul (F 50) M)) (Block [
-            Draw (Rectangle (Tup (F 40) (F 20)) blue)
+            Draw (Rectangle (Tup (F 40) (F 20)) red)
           , Draw (Rectangle (Tup (F 20) (F 40)) red)
           ])
         ]) [1..5]
