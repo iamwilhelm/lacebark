@@ -9,11 +9,12 @@ import Debug
 data Statement =
     NoOp
   | Block [Statement]
+  | Proc Term [Statement]
   | Move Term Statement
   | Rotate Term Statement
   | Scale Term Statement
   | Draw Contour
-  | Map Term [Statement] [Float]
+  | Map Statement [Float]
 
 data Contour =
     Rectangle Term Color
@@ -54,13 +55,14 @@ compile glyph statement =
         [compile glyph statement]
     Draw contour ->
       compileContour glyph contour
-    Map itername statements list ->
+    Map (Proc itername statements) list ->
       let
-        iterkey = (compileVarName glyph itername)
+        iterkey = compileVarName glyph itername
+        setKey = setVar glyph iterkey
       in
         group
           <| concatMap (\n ->
-            map (\statement -> compile (setVar glyph iterkey n) statement) statements
+            map (\statement -> compile (setKey n) statement) statements
           ) list
 
 compileVarName glyph varname =
@@ -178,12 +180,12 @@ rectangle w h colr =
             Draw (Rectangle EntityDim entity.colr))
           )
       , Draw (Circle (F 30) orange)
-      , Map M [
+      , Map (Proc M [
           Move (Tup (F 60) (Add (F -100) M)) (Block [
             Draw (Rectangle (Tup (F 40) (F 20)) blue)
           , Draw (Rectangle (Tup (F 20) (F 40)) red)
           ])
-        ] [0, 80, 160, 240, 320]
+        ]) [0, 80, 160, 240, 320]
     ]
     history = [ statements ]
     binding = Dict.empty
