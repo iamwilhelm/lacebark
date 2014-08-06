@@ -4,6 +4,7 @@ import Vec
 import Entity (..)
 import Glyph
 import Axes
+import Toolbar
 import Camera
 import Input
 import Gpipeline
@@ -24,7 +25,7 @@ type Scene = {
   , viewport: Camera.Viewport
   , cursor: Glyph.Glyph
   , axes: Axes.Axes
-  , glyphTools: [Glyph.Glyph]
+  , toolbar: Toolbar.Toolbar
   --, selectedGlyph: 0
   --, applyingGlyph: Nothing
   }
@@ -52,15 +53,7 @@ initialScene = {
   , viewport = initialViewport
   , cursor = Glyph.rectangleGlyph --Glyph.openPawCursor
   , axes = Axes.initialAxes
-  , glyphTools = [
-    --  Glyph.scratchGlyph
-    --, Glyph.tentacleGlyph
-      Glyph.rectangleGlyph
-    --, Glyph.circGlyph
-    --, Glyph.clubGlyph
-    --, Glyph.heartGlyph
-    --, Glyph.diamondGlyph
-    ]
+  , toolbar = Toolbar.initialToolbar
   }
 
 -- updates to specific entity types
@@ -88,17 +81,20 @@ updateCurrentGlyph appInput glyph =
       else
         glyph
 
-updateGlyphTools : Input.AppInput -> [Glyph.Glyph] -> [Glyph.Glyph]
-updateGlyphTools appInput glyphTools =
-  Array.toList
-  <| Array.indexedMap (\i glyph ->
-      case i of
-        0 ->
-          updateGlyph appInput <| updateCurrentGlyph appInput glyph
-        _ ->
-          updateGlyph appInput glyph
-    )
-  <| Array.fromList glyphTools
+updateGlyphTools : Input.AppInput -> Toolbar.Toolbar -> Toolbar.Toolbar
+updateGlyphTools appInput toolbar =
+  let
+    glyphs = Array.toList
+      <| Array.indexedMap (\i glyph ->
+          case i of
+            0 ->
+              updateGlyph appInput <| updateCurrentGlyph appInput glyph
+            _ ->
+              updateGlyph appInput glyph
+        )
+      <| Array.fromList toolbar.glyphs
+  in
+    { toolbar | glyphs <- glyphs }
 
 updateCursor : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph) =
@@ -157,14 +153,14 @@ updateInWorldFrame (appInput, scene) =
     --c = Debug.log "camera" scene.camera
     --v = Debug.log "viewport" scene.viewport
     --a = Debug.log "axes" scene.axes
-    --g = Debug.log "glyph" scene.glyphTools
+    --g = Debug.log "glyph" scene.toolbar
 
     inFrameInput = Input.inWorldFrame scene.camera appInput
   in
     (
       inFrameInput
     , { scene | camera <- updateCamera inFrameInput scene.camera
-              , glyphTools <- updateGlyphTools inFrameInput scene.glyphTools
+              , toolbar <- updateGlyphTools inFrameInput scene.toolbar
       }
     )
 
@@ -191,13 +187,13 @@ renderScene scene =
     Glyph.drawAsCursor scene.cursor
   ]
   <| Gpipeline.renderInCameraFrame scene.camera [
-    Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene
+    Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene.toolbar
   ]
-  <| Gpipeline.renderInWorldFrame (head scene.glyphTools) [
+  <| Gpipeline.renderInWorldFrame (Toolbar.selectedGlyph scene.toolbar) [
   ]
   <| [
     Axes.draw scene.axes
-  , Glyph.draw <| head scene.glyphTools
+  , Glyph.draw <| Toolbar.selectedGlyph scene.toolbar
   ]
 
 
