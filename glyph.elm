@@ -138,17 +138,6 @@ drawAsCursor : Glyph -> Form
 drawAsCursor ({ entity } as glyph) =
   move entity.pos <| scale 0.5 <| draw glyph
 
-drawToolbar { glyphs } =
-  toForm
-  <| flow down
-  <| map (\glyph -> collage 50 50 [scale 0.15 <| draw glyph]) glyphs
-
-
--- a hack to move and show the toolbar. toolbar should really just be a glyph that
--- contains other glyphs
-transformToolbar windowDim toolbar =
-  move (-(fst windowDim) / 2 + 50, 0) toolbar
-
 setColr : Glyph -> Color -> Glyph
 setColr ({ entity } as glyph) colr =
   { glyph | entity <-

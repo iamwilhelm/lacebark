@@ -187,7 +187,7 @@ renderScene scene =
     Glyph.drawAsCursor scene.cursor
   ]
   <| Gpipeline.renderInCameraFrame scene.camera [
-    Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene.toolbar
+    Toolbar.transform windowDim <| Toolbar.draw scene.toolbar
   ]
   <| Gpipeline.renderInWorldFrame (Toolbar.selectedGlyph scene.toolbar) [
   ]

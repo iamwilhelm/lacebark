@@ -34,4 +34,14 @@ selectedGlyph : Toolbar -> Glyph.Glyph
 selectedGlyph toolbar =
   head toolbar.glyphs
 
+draw { glyphs } =
+  toForm
+  <| flow down
+  <| map (\glyph -> collage 50 50 [scale 0.15 <| Glyph.draw glyph]) glyphs
+
+-- a hack to move and show the toolbar. toolbar should really just be a glyph that
+-- contains other glyphs
+transform windowDim toolbar =
+  move (-(fst windowDim) / 2 + 50, 0) toolbar
+
 
