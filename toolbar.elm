@@ -2,11 +2,12 @@ module Toolbar where
 
 import Entity
 import Glyph
+import Dict
 
 type Toolbar = {
     entity: Entity.Entity
-  , selected: Float
-  , glyphs: [Glyph.Glyph]
+  , selected: String
+  , glyphs: Dict.Dict String Glyph.Glyph
   }  
 
 initialToolbar = {
@@ -18,12 +19,12 @@ initialToolbar = {
     , radius = 75
     , colr = blue
     }
-  , selected = 0
-  , glyphs = [
+  , selected = "rectangle"
+  , glyphs = Dict.fromList [
     --  Glyph.scratchGlyph
     --, Glyph.tentacleGlyph
-      Glyph.rectangleGlyph
-    --, Glyph.circGlyph
+      ("circle", Glyph.circGlyph)
+    , ("rectangle", Glyph.rectangleGlyph)
     --, Glyph.clubGlyph
     --, Glyph.heartGlyph
     --, Glyph.diamondGlyph
@@ -32,16 +33,29 @@ initialToolbar = {
 
 selectedGlyph : Toolbar -> Glyph.Glyph
 selectedGlyph toolbar =
-  head toolbar.glyphs
+  Dict.getOrFail toolbar.selected toolbar.glyphs
 
-draw { glyphs } =
-  toForm
-  <| flow down
-  <| map (\glyph -> collage 50 50 [scale 0.15 <| Glyph.draw glyph]) glyphs
+draw : Toolbar -> Form
+draw ({ glyphs } as toolbar) =
+  toForm <| flow down
+         <| Dict.foldl (\key glyph cuml ->
+              collage 50 50 [
+                scale 0.15 <| Glyph.draw glyph
+              , drawSelectedOutline key toolbar
+              ] :: cuml
+            ) [] glyphs
 
 -- a hack to move and show the toolbar. toolbar should really just be a glyph that
 -- contains other glyphs
 transform windowDim toolbar =
   move (-(fst windowDim) / 2 + 50, 0) toolbar
 
+asList toolbar =
+  Dict.values toolbar.glyphs
 
+drawSelectedOutline : String -> Toolbar -> Form
+drawSelectedOutline key toolbar =
+  if key == toolbar.selected then
+    outlined (dashed black) <| square 50
+  else
+    filled black <| circle 0

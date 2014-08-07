@@ -41,7 +41,7 @@ compile glyph statement =
   case statement of
     NoOp ->
       -- TODO don't know how to have an empty Glyph. use Maybe?
-      filled black <| rect 1 1
+      filled black <| circle 0
     Block statements ->
       group <| map (\statement -> compile glyph statement) statements
     Move term statement ->
@@ -180,6 +180,7 @@ rectangle w h colr =
           Move (Tup (F 60) (Mul (F 50) M)) (Block [
             Draw (Rectangle (Tup (F 40) (F 20)) red)
           , Draw (Rectangle (Tup (F 20) (F 40)) red)
+          --, DrawGlyph "redcross" [40, 40]
           ])
         ]) [1..5]
     ]
@@ -189,18 +190,19 @@ rectangle w h colr =
     { entity = entity, statements = statements, history = history, binding = binding }
 
 
---circ : Float -> Color -> Glyph
---circ radius colr =
---  let
---    original = Entity.initialEntity
---    entity = { original |
---        colr <- colr
---      , radius <- radius
---      }
---    statements = [ Draw (NoTF) (Circle entity.radius entity.colr) ]
---    history = [ statements ]
---  in
---    { entity = entity, statements = statements, history = history }
+circ : Float -> Color -> Glyph
+circ radius colr =
+  let
+    original = Entity.initialEntity
+    entity = { original |
+        colr <- colr
+      , radius <- radius
+      }
+    statements = [ Draw (Circle (F radius) colr) ]
+    history = [ statements ]
+    binding = Dict.empty
+  in
+    { entity = entity, statements = statements, history = history, binding = binding }
 
 
 --club : Color -> Glyph
@@ -324,7 +326,7 @@ closedPawCursor =
 
 
 rectangleGlyph = rectangle 120 120 purple
---circGlyph = circ 60 orange
+circGlyph = circ 60 green
 --clubGlyph = club charcoal
 --heartGlyph = heart red
 --diamondGlyph = diamond red

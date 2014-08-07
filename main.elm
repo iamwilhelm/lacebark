@@ -1,4 +1,8 @@
+import Dict
+import Array
 import Window
+import Mouse
+
 import Util
 import Vec
 import Entity (..)
@@ -8,8 +12,6 @@ import Toolbar
 import Camera
 import Input
 import Gpipeline
-import Array
-import Mouse
 
 import Debug
 
@@ -84,17 +86,16 @@ updateCurrentGlyph appInput glyph =
 updateGlyphTools : Input.AppInput -> Toolbar.Toolbar -> Toolbar.Toolbar
 updateGlyphTools appInput toolbar =
   let
-    glyphs = Array.toList
-      <| Array.indexedMap (\i glyph ->
-          case i of
-            0 ->
-              updateGlyph appInput <| updateCurrentGlyph appInput glyph
-            _ ->
-              updateGlyph appInput glyph
-        )
-      <| Array.fromList toolbar.glyphs
+    (selected, nonSelected) =
+      Dict.partition (\key glyph -> key == toolbar.selected) toolbar.glyphs
+    newSelected = Dict.map (\glyph ->
+      updateGlyph appInput <| updateCurrentGlyph appInput glyph
+    ) selected
+    newNonSelected = Dict.map (\glyph ->
+      updateGlyph appInput glyph
+    ) nonSelected
   in
-    { toolbar | glyphs <- glyphs }
+    { toolbar | glyphs <- Dict.union newSelected newNonSelected }
 
 updateCursor : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph) =
