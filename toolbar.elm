@@ -56,6 +56,6 @@ asList toolbar =
 drawSelectedOutline : String -> Toolbar -> Form
 drawSelectedOutline key toolbar =
   if key == toolbar.selected then
-    outlined (dashed black) <| square 50
+    outlined (dotted black) <| square 48
   else
     filled black <| circle 0
