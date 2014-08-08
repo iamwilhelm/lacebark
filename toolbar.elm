@@ -1,8 +1,8 @@
 module Toolbar where
 
+import Dict
 import Entity
 import Glyph
-import Dict
 
 type Toolbar = {
     entity: Entity.Entity
@@ -59,3 +59,7 @@ drawSelectedOutline key toolbar =
     outlined (dotted black) <| square 48
   else
     filled black <| circle 0
+
+getGlyph : Toolbar -> String -> Glyph.Glyph
+getGlyph toolbar key =
+  Dict.getOrFail key toolbar.glyphs
