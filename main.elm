@@ -8,7 +8,6 @@ import Vec
 import Entity (..)
 import Glyph
 import Axes
-import Toolbar
 import Camera
 import Input
 import Gpipeline
@@ -27,7 +26,7 @@ type Scene = {
   , viewport: Camera.Viewport
   , cursor: Glyph.Glyph
   , axes: Axes.Axes
-  , toolbar: Toolbar.Toolbar
+  , toolbar: Glyph.Toolbar
   --, selectedGlyph: 0
   --, applyingGlyph: Nothing
   }
@@ -55,7 +54,7 @@ initialScene = {
   , viewport = initialViewport
   , cursor = Glyph.rectangleGlyph --Glyph.openPawCursor
   , axes = Axes.initialAxes
-  , toolbar = Toolbar.initialToolbar
+  , toolbar = Glyph.initialToolbar
   }
 
 -- updates to specific entity types
@@ -83,7 +82,7 @@ updateCurrentGlyph appInput glyph =
       else
         glyph
 
-updateGlyphTools : Input.AppInput -> Toolbar.Toolbar -> Toolbar.Toolbar
+updateGlyphTools : Input.AppInput -> Glyph.Toolbar -> Glyph.Toolbar
 updateGlyphTools appInput toolbar =
   let
     (selected, nonSelected) =
@@ -185,16 +184,16 @@ updateApp appInput scene =
 renderScene : Scene -> [Form]
 renderScene scene =
   Gpipeline.renderInViewportFrame [
-    Glyph.drawAsCursor scene.cursor
+    Glyph.drawAsCursor scene.toolbar scene.cursor
   ]
   <| Gpipeline.renderInCameraFrame scene.camera [
-    Toolbar.transform windowDim <| Toolbar.draw scene.toolbar
+    Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene.toolbar
   ]
-  <| Gpipeline.renderInWorldFrame (Toolbar.selectedGlyph scene.toolbar) [
+  <| Gpipeline.renderInWorldFrame (Glyph.selectedGlyph scene.toolbar) [
   ]
   <| [
     Axes.draw scene.axes
-  , Glyph.draw <| Toolbar.selectedGlyph scene.toolbar
+  , Glyph.draw scene.toolbar <| Glyph.selectedGlyph scene.toolbar
   ]
 
 

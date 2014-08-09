@@ -1,9 +1,116 @@
 module Glyph where
 
+import Dict
 import Transform2D
 import Vec
 import Entity
-import Dict
+
+-- a glyph is a combination of shapes. glyph can be composed of many other
+
+type Glyph = {
+    entity: Entity.Entity
+  , statements: [Statement]
+  , history: [ [Statement] ]
+  , binding: Dict.Dict String Float
+  }
+
+setVar glyph name value =
+  { glyph | binding <- Dict.insert name value glyph.binding }
+
+getVar glyph name =
+  Dict.getOrElse 0 name glyph.binding
+
+-- drawing functions without coordinate transforms
+
+draw: Toolbar -> Glyph -> Form
+draw toolbar ({ entity, statements } as glyph) =
+  group <| map (\statement -> compile toolbar glyph statement) statements
+
+drawAsCursor : Toolbar -> Glyph -> Form
+drawAsCursor toolbar ({ entity } as glyph) =
+  move entity.pos <| scale 0.5 <| draw toolbar glyph
+
+setColr : Glyph -> Color -> Glyph
+setColr ({ entity } as glyph) colr =
+  { glyph | entity <-
+      Entity.setColr glyph.entity colr
+  }
+
+setPos : Glyph -> Float -> Float -> Glyph
+setPos ({ entity } as glyph) x y =
+  { glyph | entity <-
+    Entity.setPos glyph.entity x y
+  }
+
+setDim : Glyph -> Float -> Float -> Glyph
+setDim ({ entity } as glyph) w h =
+  { glyph | entity <-
+    Entity.setDim glyph.entity w h
+  }
+
+----- Toolbar -----
+
+type Toolbar = {
+    entity: Entity.Entity
+  , selected: String
+  , glyphs: Dict.Dict String Glyph
+  }
+
+initialToolbar = {
+    entity = {
+      pos = (0, 0)
+    , vel = (0, 0)
+    , rot = 0
+    , dim = (10, 10)
+    , radius = 75
+    , colr = blue
+    }
+  , selected = "scratch"
+  , glyphs = Dict.fromList [
+      ("scratch", scratchGlyph)
+    , ("circle", circGlyph)
+    , ("rectangle", rectangleGlyph)
+    --, Glyph.tentacleGlyph
+    --, Glyph.clubGlyph
+    --, Glyph.heartGlyph
+    --, Glyph.diamondGlyph
+    ]
+  }
+
+selectedGlyph : Toolbar -> Glyph
+selectedGlyph toolbar =
+  Dict.getOrFail toolbar.selected toolbar.glyphs
+
+drawToolbar : Toolbar -> Form
+drawToolbar ({ glyphs } as toolbar) =
+  toForm <| flow down
+         <| Dict.foldl (\key glyph cuml ->
+              collage 50 50 [
+                scale 0.15 <| draw toolbar glyph
+              , drawSelectedOutline key toolbar
+              ] :: cuml
+            ) [] glyphs
+
+-- a hack to move and show the toolbar. toolbar should really just be a glyph that
+-- contains other glyphs
+transformToolbar windowDim toolbar =
+  move (-(fst windowDim) / 2 + 50, 0) toolbar
+
+asList toolbar =
+  Dict.values toolbar.glyphs
+
+drawSelectedOutline : String -> Toolbar -> Form
+drawSelectedOutline key toolbar =
+  if key == toolbar.selected then
+    outlined (dotted black) <| square 48
+  else
+    filled black <| circle 0
+
+getGlyph : Toolbar -> String -> Glyph
+getGlyph toolbar key =
+  Dict.getOrFail key toolbar.glyphs
+
+----- BNF for language -----
 
 data Statement =
     NoOp
@@ -14,6 +121,7 @@ data Statement =
   | Scale Term Statement
   | Draw Contour
   | Map Statement [Float]
+  | Include String
 
 data Contour =
     Rectangle Term Color
@@ -36,25 +144,25 @@ data Term =
   | M
 
 
-compile : Glyph -> Statement -> Form
-compile glyph statement =
+compile : Toolbar -> Glyph -> Statement -> Form
+compile toolbar glyph statement =
   case statement of
     NoOp ->
       -- TODO don't know how to have an empty Glyph. use Maybe?
       filled black <| circle 0
     Block statements ->
-      group <| map (\statement -> compile glyph statement) statements
+      group <| map (\statement -> compile toolbar glyph statement) statements
     Move term statement ->
-      group [move (compileTupTerm glyph term) <| compile glyph statement]
+      group [move (compileTupTerm glyph term) <| compile toolbar glyph statement]
     Rotate term statement ->
-      rotate (compileNumTerm glyph term) <| compile glyph statement
+      rotate (compileNumTerm glyph term) <| compile toolbar glyph statement
     Scale (Tup x y) statement ->
       groupTransform
         (Transform2D.multiply
           (Transform2D.scaleX (compileNumTerm glyph x))
           (Transform2D.scaleY (compileNumTerm glyph y))
         )
-        [compile glyph statement]
+        [compile toolbar glyph statement]
     Draw contour ->
       compileContour glyph contour
     Map (Proc itername statements) list ->
@@ -63,8 +171,10 @@ compile glyph statement =
         setKey = setVar glyph iterkey
       in
         group <| concatMap (\n ->
-          map (\statement -> compile (setKey n) statement) statements
+          map (\statement -> compile toolbar (setKey n) statement) statements
         ) list
+    Include childGlyphName ->
+      draw toolbar (Dict.getOrFail childGlyphName toolbar.glyphs)
 
 compileVarName glyph varname =
   case varname of
@@ -113,50 +223,8 @@ compileContour ({ entity } as glyph) contour =
     Circle (F r) colr ->
       filled colr <| circle r
 
--- a glyph is a combination of shapes. glyph can be composed of many other
-
-type Glyph = {
-    entity: Entity.Entity
-  , statements: [Statement]
-  , history: [ [Statement] ]
-  , binding: Dict.Dict String Float
-  }
-
-setVar glyph name value =
-  { glyph | binding <- Dict.insert name value glyph.binding }
-
-getVar glyph name =
-  Dict.getOrElse 0 name glyph.binding
-
--- drawing functions without coordinate transforms
-
-draw: Glyph -> Form
-draw ({ entity, statements } as glyph) =
-  group <| map (\statement -> compile glyph statement) statements
-
-drawAsCursor : Glyph -> Form
-drawAsCursor ({ entity } as glyph) =
-  move entity.pos <| scale 0.5 <| draw glyph
-
-setColr : Glyph -> Color -> Glyph
-setColr ({ entity } as glyph) colr =
-  { glyph | entity <-
-      Entity.setColr glyph.entity colr
-  }
-
-setPos : Glyph -> Float -> Float -> Glyph
-setPos ({ entity } as glyph) x y =
-  { glyph | entity <-
-    Entity.setPos glyph.entity x y
-  }
-
-setDim : Glyph -> Float -> Float -> Glyph
-setDim ({ entity } as glyph) w h =
-  { glyph | entity <-
-    Entity.setDim glyph.entity w h
-  }
-
 -- defining various default glyphs
+
 
 
 rectangle : Float -> Float -> Color -> Glyph
@@ -170,20 +238,7 @@ rectangle w h colr =
       , radius = sqrt (w * w + h * h)
       , colr = colr
       }
-    statements = [
-        Rotate (Degrees 60) (
-          Move (Tup (F 200) (F 0)) (
-            Draw (Rectangle EntityDim entity.colr))
-          )
-      , Draw (Circle (F 30) orange)
-      , Map (Proc M [
-          Move (Tup (F 60) (Mul (F 50) M)) (Block [
-            Draw (Rectangle (Tup (F 40) (F 20)) red)
-          , Draw (Rectangle (Tup (F 20) (F 40)) red)
-          --, DrawGlyph "redcross" [40, 40]
-          ])
-        ]) [1..5]
-    ]
+    statements = [ Draw (Rectangle (Tup (F 100) (F 100)) red) ]
     history = [ statements ]
     binding = Dict.empty
   in
@@ -325,6 +380,36 @@ closedPawCursor =
       history = [statements], binding = binding }
 
 
+scratchGlyph =
+  let
+    entity = {
+      pos = (0, 0)
+    , vel = (0, 0)
+    , rot = 0
+    , dim = (80, 80)
+    , radius = 75
+    , colr = blue
+    }
+    statements = [
+        Rotate (Degrees 60) (
+          Move (Tup (F 200) (F 0)) (
+            Draw (Rectangle EntityDim entity.colr))
+          )
+      , Draw (Circle (F 30) orange)
+      , Map (Proc M [
+          Move (Tup (F 60) (Mul (F 50) M)) (Block [
+            Draw (Rectangle (Tup (F 40) (F 20)) red)
+          , Draw (Rectangle (Tup (F 20) (F 40)) red)
+          ])
+        ]) [1..5]
+      , Move (Tup (F -100) (F 0)) (Include "circle")
+      ]
+    history = [statements]
+    binding = Dict.empty
+  in
+    { entity = entity, statements = statements, history = history, binding = binding }
+
+
 rectangleGlyph = rectangle 120 120 purple
 circGlyph = circ 60 green
 --clubGlyph = club charcoal
@@ -345,18 +430,6 @@ circGlyph = circ 60 green
 --        <| scale 0.7
 --        <| move (80, 80)
 --        <| rinclude tentacleGlyph depth
---      ]
---  in
---    (entity, entityForm)
-
---scratchGlyph =
---  let
---    entity = Entity.initialEntity
---    entityForm entity depth =
---      group [
---        include rectangleGlyph
---      , move (100, 100) <| include circGlyph
---      --, move (-150, 50) <| include clubGlyph
 --      ]
 --  in
 --    (entity, entityForm)
