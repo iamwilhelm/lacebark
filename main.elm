@@ -104,7 +104,7 @@ updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph)
         True ->
           Glyph.closedPawCursor
         False ->
-          Glyph.openPawCursor
+          Glyph.arrowCursor
     newEntity = cursorGlyph.entity
     updatedEntity = { entity | pos <- mousePos }
   in

@@ -127,6 +127,7 @@ data Statement =
 data Contour =
     Rectangle Term Color
   | Circle Term Color
+  | Triangle Term Color
 
 -- Change Size, Pos, and Magnification to Tuple?
 data Term =
@@ -223,6 +224,8 @@ compileContour ({ entity } as glyph) contour =
       filled colr <| uncurry rect entity.dim
     Circle (F r) colr ->
       filled colr <| circle r
+    Triangle (F r) colr ->
+      filled colr <| ngon 3 r
 
 -- defining various default glyphs
 
@@ -310,21 +313,22 @@ circ radius colr =
 
 ----- Hardcoded glyphs
 
---arrowCursor =
---  let
---    entity = Entity.initialEntity
---
---    entityForm : Entity -> Int -> Form
---    entityForm glyph depth =
---      group [
---        filled black <| ngon 3 20
---      , move (8.25, -15)
---        <| rotate (degrees 30)
---        <| filled black <| rect 10 25
---      ]
---  in
---    (entity, entityForm)
+arrowCursor =
+  let
+    entity = Entity.initialEntity
 
+    statements = [
+        Draw (Triangle (F 20) black)
+      , Move (Tup (F 8.25) (F -15)) (
+          Rotate (Degrees 30) (
+            Draw (Rectangle (Tup (F 10) (F 25)) black)
+          )
+        )
+      ]
+    history = [statements]
+    binding = Dict.empty
+  in
+    { entity = entity, statements = statements, history = history, binding = binding }
 
 openPawCursor =
   let
