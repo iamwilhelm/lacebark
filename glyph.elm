@@ -70,6 +70,7 @@ initialToolbar = {
       ("scratch", scratchGlyph)
     , ("circle", circGlyph)
     , ("rectangle", rectangleGlyph)
+    , ("redcross", redcrossGlyph)
     --, Glyph.tentacleGlyph
     --, Glyph.clubGlyph
     --, Glyph.heartGlyph
@@ -397,10 +398,7 @@ scratchGlyph =
           )
       , Draw (Circle (F 30) orange)
       , Map (Proc M [
-          Move (Tup (F 60) (Mul (F 50) M)) (Block [
-            Draw (Rectangle (Tup (F 40) (F 20)) red)
-          , Draw (Rectangle (Tup (F 20) (F 40)) red)
-          ])
+          Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
         ]) [1..5]
       , Move (Tup (F -100) (F 0)) (Include "circle")
       ]
@@ -412,6 +410,26 @@ scratchGlyph =
 
 rectangleGlyph = rectangle 120 120 purple
 circGlyph = circ 60 green
+
+redcrossGlyph =
+  let
+    entity = {
+      pos = (0, 0)
+    , vel = (0, 0)
+    , rot = 0
+    , dim = (80, 80)
+    , radius = 75
+    , colr = blue
+    }
+    statements = [
+        Draw (Rectangle (Tup (F 80) (F 40)) red)
+      , Draw (Rectangle (Tup (F 40) (F 80)) red)
+      ]
+    history = [statements]
+    binding = Dict.empty
+  in
+    { entity = entity, statements = statements, history = history, binding = binding }
+
 --clubGlyph = club charcoal
 --heartGlyph = heart red
 --diamondGlyph = diamond red
