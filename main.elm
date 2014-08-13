@@ -185,15 +185,15 @@ renderScene : Scene -> [Form]
 renderScene scene =
   Gpipeline.renderInViewportFrame [
     Glyph.drawAsCursor scene.toolbar scene.cursor
-  ]
-  <| Gpipeline.renderInCameraFrame scene.camera [
+  ] <|
+  Gpipeline.renderInCameraFrame scene.camera [
     Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene.toolbar
-  ]
-  <| Gpipeline.renderInWorldFrame (Glyph.selectedGlyph scene.toolbar) [
-  ]
-  <| [
+  ] <|
+  Gpipeline.renderInWorldFrame (Glyph.selectedGlyph scene.toolbar) [
     Axes.draw scene.axes
-  , Glyph.draw scene.toolbar <| Glyph.selectedGlyph scene.toolbar
+  ] [
+  ] [
+    Glyph.draw scene.toolbar <| Glyph.selectedGlyph scene.toolbar
   ]
 
 
