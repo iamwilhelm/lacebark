@@ -2,6 +2,7 @@ module Glyph where
 
 import Dict
 import Transform2D
+import Array
 import Vec
 import Entity
 
@@ -56,16 +57,16 @@ type Toolbar = {
   , glyphs: Dict.Dict String Glyph
   }
 
-initialToolbar = {
+initialToolbar windowDim = {
     entity = {
-      pos = (0, 0)
+      pos = (0, (snd windowDim / 2 - 50))
     , vel = (0, 0)
     , rot = 0
-    , dim = (10, 10)
-    , radius = 75
+    , dim = (4 * 50, 50)
+    , radius = 0
     , colr = blue
     }
-  , selected = "scratch"
+  , selected = "redcross"
   , glyphs = Dict.fromList [
       ("scratch", scratchGlyph)
     , ("circle", circGlyph)
@@ -78,24 +79,46 @@ initialToolbar = {
     ]
   }
 
+toolbarTop : Toolbar -> Float
+toolbarTop toolbar =
+  (snd toolbar.entity.pos) + (snd toolbar.entity.dim) / 2
+
+toolbarBottom : Toolbar -> Float
+toolbarBottom toolbar =
+  (snd toolbar.entity.pos) - (snd toolbar.entity.dim) / 2
+
+numOfGlyphs : Dict.Dict String Glyph -> Int
+numOfGlyphs glyphs =
+  length <| Dict.toList glyphs
+
+selectGlyph : Toolbar -> Float -> Float -> String
+selectGlyph toolbar x y =
+  let
+    names = Dict.keys toolbar.glyphs
+    xcoord = x + (fst toolbar.entity.dim) / 2
+    xindex = floor (xcoord / ((fst toolbar.entity.dim) / (toFloat <| numOfGlyphs toolbar.glyphs)))
+  in
+    if ((xindex >= 0) && (xindex < (length names)))
+        && ((y > toolbarBottom toolbar) && (y < toolbarTop toolbar)) then
+      Array.getOrElse "scratch" xindex (Array.fromList names)
+    else
+      toolbar.selected
+
 selectedGlyph : Toolbar -> Glyph
 selectedGlyph toolbar =
   Dict.getOrFail toolbar.selected toolbar.glyphs
 
 drawToolbar : Toolbar -> Form
 drawToolbar ({ glyphs } as toolbar) =
-  toForm <| flow down
-         <| Dict.foldl (\key glyph cuml ->
-              collage 50 50 [
-                scale 0.15 <| draw toolbar glyph
-              , drawSelectedOutline key toolbar
-              ] :: cuml
-            ) [] glyphs
-
--- a hack to move and show the toolbar. toolbar should really just be a glyph that
--- contains other glyphs
-transformToolbar windowDim toolbar =
-  move (-(fst windowDim) / 2 + 50, 0) toolbar
+  move toolbar.entity.pos
+  <| toForm
+  <| flow left
+  <| Dict.foldl (\key glyph cuml ->
+       collage 50 50 [
+         scale 0.15 <| draw toolbar glyph
+       , drawSelectedOutline key toolbar
+       ] :: cuml
+     ) [] glyphs
 
 asList toolbar =
   Dict.values toolbar.glyphs

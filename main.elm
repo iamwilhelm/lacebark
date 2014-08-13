@@ -54,7 +54,7 @@ initialScene = {
   , viewport = initialViewport
   , cursor = Glyph.rectangleGlyph --Glyph.openPawCursor
   , axes = Axes.initialAxes
-  , toolbar = Glyph.initialToolbar
+  , toolbar = Glyph.initialToolbar windowDim
   }
 
 -- updates to specific entity types
@@ -73,28 +73,40 @@ updateCurrentGlyph appInput glyph =
     Input.Move (x, y) ->
       glyph
     Input.MoveDrag (x, y) ->
-      Glyph.setPos glyph x y
+      --Glyph.setPos glyph x y
+      glyph
     Input.StartDrag (x, y) ->
       glyph
     Input.StopDrag ((sx, sy), (ex, ey)) ->
       if (sx == ex) && (sy == ey) then
-        Glyph.setPos glyph sx sy
+        --Glyph.setPos glyph sx sy
+        glyph
       else
         glyph
+
+updateSelected : Input.AppInput -> Glyph.Toolbar -> String
+updateSelected appInput toolbar =
+  case appInput.mouseEvent of
+    Input.StopDrag ((sx, sy), (ex, ey)) ->
+      if (sx == ex) && (sy == ey) then
+        Glyph.selectGlyph toolbar sx sy
+      else
+        toolbar.selected
+    _ ->
+      toolbar.selected
 
 updateGlyphTools : Input.AppInput -> Glyph.Toolbar -> Glyph.Toolbar
 updateGlyphTools appInput toolbar =
   let
-    (selected, nonSelected) =
-      Dict.partition (\key glyph -> key == toolbar.selected) toolbar.glyphs
-    newSelected = Dict.map (\glyph ->
-      updateGlyph appInput <| updateCurrentGlyph appInput glyph
-    ) selected
-    newNonSelected = Dict.map (\glyph ->
-      updateGlyph appInput glyph
-    ) nonSelected
+    (s, n) = Dict.partition (\k glyph -> k == toolbar.selected) toolbar.glyphs
+    ns = Dict.map (\glyph -> updateGlyph appInput <| updateCurrentGlyph appInput glyph) s
+    nn = Dict.map (\glyph -> updateGlyph appInput glyph) n
+    newSelected = updateSelected appInput toolbar
   in
-    { toolbar | glyphs <- Dict.union newSelected newNonSelected }
+    { toolbar |
+      selected <- newSelected
+    , glyphs <- Dict.union ns nn
+    }
 
 updateCursor : Input.AppInput -> Glyph.Glyph -> Glyph.Glyph
 updateCursor { mousePos, mouseDown, mouseDragStart } ({ entity } as cursorGlyph) =
@@ -187,7 +199,7 @@ renderScene scene =
     Glyph.drawAsCursor scene.toolbar scene.cursor
   ] <|
   Gpipeline.renderInCameraFrame scene.camera [
-    Glyph.transformToolbar windowDim <| Glyph.drawToolbar scene.toolbar
+    Glyph.drawToolbar scene.toolbar
   ] <|
   Gpipeline.renderInWorldFrame (Glyph.selectedGlyph scene.toolbar) [
     Axes.draw scene.axes
