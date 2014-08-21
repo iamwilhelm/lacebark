@@ -120,15 +120,15 @@ drawToolbar ({ glyphs } as toolbar) =
   <| Dict.foldl (\key glyph cuml ->
        collage 50 50 [
          scale 0.15 <| draw toolbar glyph
-       , drawSelectedOutline key toolbar
+       , drawToolbarSelection key toolbar
        ] :: cuml
      ) [] glyphs
 
 asList toolbar =
   Dict.values toolbar.glyphs
 
-drawSelectedOutline : String -> Toolbar -> Form
-drawSelectedOutline key toolbar =
+drawToolbarSelection : String -> Toolbar -> Form
+drawToolbarSelection key toolbar =
   if key == toolbar.selected then
     outlined (dotted black) <| square 48
   else
