@@ -62,7 +62,7 @@ initialToolbar windowDim = {
       pos = (0, (snd windowDim / 2 - 50))
     , vel = (0, 0)
     , rot = 0
-    , dim = (4 * 50, 50)
+    , dim = (7 * 50, 50)
     , radius = 0
     , colr = blue
     }
@@ -72,6 +72,9 @@ initialToolbar windowDim = {
     , ("circle", circGlyph)
     , ("rectangle", rectangleGlyph)
     , ("redcross", redcrossGlyph)
+    , ("arrow", arrowCursor)
+    , ("openPaw", openPawCursor)
+    , ("closedPaw", closedPawCursor)
     --, Glyph.tentacleGlyph
     --, Glyph.clubGlyph
     --, Glyph.heartGlyph
