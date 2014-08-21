@@ -256,6 +256,33 @@ compileContour ({ entity } as glyph) contour =
 
 -- defining various default glyphs
 
+scratchGlyph =
+  let
+    entity = {
+      pos = (0, 0)
+    , vel = (0, 0)
+    , rot = 0
+    , dim = (80, 80)
+    , radius = 75
+    , colr = blue
+    }
+    selected = Nothing
+    statements = [
+        Rotate (Degrees 60) (
+          Move (Tup (F 200) (F 0)) (
+            Draw (Rectangle EntityDim entity.colr))
+          )
+      , Draw (Circle (F 30) orange)
+      , Map (Proc M [
+          Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
+        ]) [1..5]
+      , Move (Tup (F -100) (F 0)) (Include "circle")
+      ]
+    history = [statements]
+    binding = Dict.empty
+  in
+    { entity = entity, statements = statements,
+      history = history, binding = binding }
 
 
 rectangle : Float -> Float -> Color -> Glyph
@@ -410,34 +437,6 @@ closedPawCursor =
   in
     { entity = entity, statements = statements,
       history = [statements], binding = binding }
-
-
-scratchGlyph =
-  let
-    entity = {
-      pos = (0, 0)
-    , vel = (0, 0)
-    , rot = 0
-    , dim = (80, 80)
-    , radius = 75
-    , colr = blue
-    }
-    statements = [
-        Rotate (Degrees 60) (
-          Move (Tup (F 200) (F 0)) (
-            Draw (Rectangle EntityDim entity.colr))
-          )
-      , Draw (Circle (F 30) orange)
-      , Map (Proc M [
-          Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
-        ]) [1..5]
-      , Move (Tup (F -100) (F 0)) (Include "circle")
-      ]
-    history = [statements]
-    binding = Dict.empty
-  in
-    { entity = entity, statements = statements, history = history, binding = binding }
-
 
 rectangleGlyph = rectangle 120 120 purple
 circGlyph = circ 60 green
