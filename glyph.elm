@@ -87,16 +87,17 @@ toolbarBottom : Toolbar -> Float
 toolbarBottom toolbar =
   (snd toolbar.entity.pos) - (snd toolbar.entity.dim) / 2
 
-numOfGlyphs : Dict.Dict String Glyph -> Int
-numOfGlyphs glyphs =
-  length <| Dict.toList glyphs
+numOfGlyphs : Toolbar -> Int
+numOfGlyphs toolbar =
+  length <| Dict.toList toolbar.glyphs
 
 selectGlyph : Toolbar -> Float -> Float -> String
 selectGlyph toolbar x y =
   let
     names = Dict.keys toolbar.glyphs
     xcoord = x + (fst toolbar.entity.dim) / 2
-    xindex = floor (xcoord / ((fst toolbar.entity.dim) / (toFloat <| numOfGlyphs toolbar.glyphs)))
+    xindex = floor (xcoord /
+                    ((fst toolbar.entity.dim) / (toFloat <| numOfGlyphs toolbar)))
   in
     if ((xindex >= 0) && (xindex < (length names)))
         && ((y > toolbarBottom toolbar) && (y < toolbarTop toolbar)) then
