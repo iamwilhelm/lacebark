@@ -206,6 +206,7 @@ renderScene scene =
   ] [
   ] [
     Glyph.draw scene.toolbar <| Glyph.selectedGlyph scene.toolbar
+  , Glyph.drawRubberband <| Glyph.selectedGlyph scene.toolbar
   ]
 
 

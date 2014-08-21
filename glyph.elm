@@ -27,6 +27,23 @@ draw: Toolbar -> Glyph -> Form
 draw toolbar ({ entity, statements } as glyph) =
   group <| map (\statement -> compile toolbar glyph statement) statements
 
+drawRubberband : Glyph -> Form
+drawRubberband glyph =
+  let
+    size = getBoundingBox glyph
+  in
+    group [
+      (outlined (dashed black) <| uncurry rect <| size)
+    , move (-(fst size) / 2, (snd size) / 2) <| filled black <| circle 5
+    , move (0, (snd size) / 2) <| filled black <| circle 5
+    , move ((fst size) / 2, (snd size) / 2) <| filled black <| circle 5
+    , move (-(fst size) / 2, 0) <| filled black <| circle 5
+    , move ((fst size) / 2, 0) <| filled black <| circle 5
+    , move (-(fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
+    , move (0, -(snd size) / 2) <| filled black <| circle 5
+    , move ((fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
+    ]
+
 drawAsCursor : Toolbar -> Glyph -> Form
 drawAsCursor toolbar ({ entity } as glyph) =
   move entity.pos <| scale 0.5 <| draw toolbar glyph
@@ -49,6 +66,35 @@ setDim ({ entity } as glyph) w h =
     Entity.setDim glyph.entity w h
   }
 
+getBoundingBox : Glyph -> Vec.Vec
+getBoundingBox glyph =
+  foldl (\t x -> Vec.add t x) (0, 0)
+  <| map (\x -> boundsForStatement glyph x ) glyph.statements
+
+
+boundsForStatement : Glyph -> Statement -> Vec.Vec
+boundsForStatement glyph statement =
+  case statement of
+    NoOp ->
+      (0, 0)
+    Block statements ->
+      foldl (\t x -> Vec.add t x) (0, 0)
+      <| map (\x -> boundsForStatement glyph x) statements
+    Draw contour ->
+      boundsForContour glyph contour
+
+boundsForContour : Glyph -> Contour -> Vec.Vec
+boundsForContour ({ entity } as glyph) contour =
+  case contour of
+    Rectangle (Tup w h) colr ->
+      (compileNumTerm glyph w, compileNumTerm glyph h)
+    Rectangle EntityDim colr ->
+      entity.dim
+    Circle r colr ->
+      ((2 * compileNumTerm glyph r), (2 * compileNumTerm glyph r))
+    Triangle r colr ->
+      ((2 * compileNumTerm glyph r), (2 * compileNumTerm glyph r))
+
 ----- Toolbar -----
 
 type Toolbar = {
@@ -66,7 +112,7 @@ initialToolbar windowDim = {
     , radius = 0
     , colr = blue
     }
-  , selected = "redcross"
+  , selected = "rectangle"
   , glyphs = Dict.fromList [
       ("scratch", scratchGlyph)
     , ("circle", circGlyph)
@@ -156,7 +202,6 @@ data Contour =
   | Circle Term Color
   | Triangle Term Color
 
--- Change Size, Pos, and Magnification to Tuple?
 data Term =
     Tup Term Term
   | F Float
@@ -296,11 +341,12 @@ rectangle w h colr =
       , radius = sqrt (w * w + h * h)
       , colr = colr
       }
-    statements = [ Draw (Rectangle (Tup (F 100) (F 100)) red) ]
+    statements = [ Draw (Rectangle (Tup (F 150) (F 150)) red) ]
     history = [ statements ]
     binding = Dict.empty
   in
-    { entity = entity, statements = statements, history = history, binding = binding }
+    { entity = entity, statements = statements,
+      history = history, binding = binding }
 
 
 circ : Float -> Color -> Glyph
@@ -315,7 +361,8 @@ circ radius colr =
     history = [ statements ]
     binding = Dict.empty
   in
-    { entity = entity, statements = statements, history = history, binding = binding }
+    { entity = entity, statements = statements,
+      history = history, binding = binding }
 
 
 --club : Color -> Glyph
