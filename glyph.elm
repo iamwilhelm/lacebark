@@ -341,7 +341,7 @@ rectangle w h colr =
       , radius = sqrt (w * w + h * h)
       , colr = colr
       }
-    statements = [ Draw (Rectangle (Tup (F 150) (F 150)) red) ]
+    statements = [ Draw (Rectangle (Tup (F w) (F h)) colr) ]
     history = [ statements ]
     binding = Dict.empty
   in
@@ -485,8 +485,8 @@ closedPawCursor =
     { entity = entity, statements = statements,
       history = [statements], binding = binding }
 
-rectangleGlyph = rectangle 120 120 purple
-circGlyph = circ 60 green
+rectangleGlyph = rectangle 140 140 purple
+circGlyph = circ 80 green
 
 redcrossGlyph =
   let
