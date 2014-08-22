@@ -68,7 +68,7 @@ setDim ({ entity } as glyph) w h =
 
 getBoundingBox : Glyph -> Vec.Vec
 getBoundingBox glyph =
-  foldl (\t x -> Vec.add t x) (0, 0)
+  foldl (\t x -> (max (fst t) (fst x), max (snd t) (snd x))) (0, 0)
   <| map (\x -> boundsForStatement glyph x ) glyph.statements
 
 
@@ -78,7 +78,7 @@ boundsForStatement glyph statement =
     NoOp ->
       (0, 0)
     Block statements ->
-      foldl (\t x -> Vec.add t x) (0, 0)
+      foldl (\t x -> (max (fst t) (fst x), max (snd t) (snd x))) (0, 0)
       <| map (\x -> boundsForStatement glyph x) statements
     Draw contour ->
       boundsForContour glyph contour
