@@ -129,7 +129,7 @@ initialToolbar windowDim = {
     , radius = 0
     , colr = blue
     }
-  , selected = "rectangle"
+  , selected = "scratch"
   , glyphs = Dict.fromList [
       ("scratch", scratchGlyph)
     , ("circle", circGlyph)
@@ -324,21 +324,31 @@ scratchGlyph =
       pos = (0, 0)
     , vel = (0, 0)
     , rot = 0
-    , dim = (80, 80)
+    , dim = (100, 100)
     , radius = 75
     , colr = blue
     }
     selected = Nothing
     statements = [
-        Rotate (Degrees 60) (
-          Move (Tup (F 200) (F 0)) (
-            Draw (Rectangle EntityDim entity.colr))
+      --  Rotate (Degrees 60) (
+        Move (Tup (F -100) (F -20)) (
+          Draw (Rectangle EntityDim entity.colr)
+        )
+      , Draw (Circle (F 50) orange)
+      , Scale (Tup (F 3) (F 3)) (
+          Move (Tup (F 50) (F -30)) (
+            Draw (Rectangle (Tup (F 20) (F 100)) yellow)
           )
-      , Draw (Circle (F 30) orange)
-      , Map (Proc M [
-          Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
-        ]) [1..5]
-      , Move (Tup (F -100) (F 0)) (Include "circle")
+        )
+      , Move (Tup (F 50) (F 50)) (
+          Scale (Tup (F 1) (F 2)) (
+            Draw (Rectangle (Tup (F 150) (F 20)) red)
+          )
+        )
+      -- , Map (Proc M [
+      --     Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
+      --   ]) [1..5]
+      -- , Move (Tup (F -100) (F 0)) (Include "circle")
       ]
     history = [statements]
     binding = Dict.empty
