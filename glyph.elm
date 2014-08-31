@@ -5,6 +5,8 @@ import Transform2D
 import Array
 import Vec
 import Entity
+import BoundingBox
+
 
 -- a glyph is a combination of shapes. glyph can be composed of many other
 
@@ -69,43 +71,19 @@ setDim ({ entity } as glyph) w h =
     Entity.setDim glyph.entity w h
   }
 
-mergeIntervals : (Vec.Vec, Vec.Vec) -> Float
-mergeIntervals ((interval1, interval2), (pos1, pos2)) =
-  let
-    left_pos = min (pos1 - interval1 / 2) (pos2 - interval2 / 2)
-    right_pos = max (pos1 + interval1 / 2) (pos2 + interval2 / 2)
-  in
-    abs (right_pos - left_pos)
 
-mergeOffsets : (Vec.Vec, Vec.Vec) -> Float
-mergeOffsets ((interval1, interval2), (pos1, pos2)) =
-  let
-    left_pos = min (pos1 - interval1 / 2) (pos2 - interval2 / 2)
-    right_pos = max (pos1 + interval1 / 2) (pos2 + interval2 / 2)
-  in
-    (left_pos + right_pos) / 2
-
-getBoundingBox : Glyph -> (Vec.Vec, Vec.Vec)
+getBoundingBox : Glyph -> BoundingBox.RangedOffset
 getBoundingBox glyph =
   boundsForStatement glyph (Block glyph.statements)
 
-mergeBoundingBoxes : (Vec.Vec, Vec.Vec) -> (Vec.Vec, Vec.Vec) -> (Vec.Vec, Vec.Vec)
-mergeBoundingBoxes (size1, offset1) (size2, offset2) =
-  let
-    sizeX = mergeIntervals ((fst size1, fst size2), (fst offset1, fst offset2))
-    sizeY = mergeIntervals ((snd size1, snd size2), (snd offset1, snd offset2))
-    offsetX = mergeOffsets ((fst size1, fst size2), (fst offset1, fst offset2))
-    offsetY = mergeOffsets ((snd size1, snd size2), (snd offset1, snd offset2))
-  in
-    ((sizeX, sizeY), (offsetX, offsetY))
 
-boundsForStatement : Glyph -> Statement -> (Vec.Vec, Vec.Vec)
+boundsForStatement : Glyph -> Statement -> BoundingBox.RangedOffset
 boundsForStatement glyph statement =
   case statement of
     NoOp ->
       ((0, 0), (0, 0))
     Block statements ->
-      foldl (\t x -> mergeBoundingBoxes t x)
+      foldl (\t x -> BoundingBox.merge t x)
         (boundsForStatement glyph <| head statements)
         (map (\x -> boundsForStatement glyph x) <| tail statements)
     Move term statement ->
