@@ -30,19 +30,22 @@ draw toolbar ({ entity, statements } as glyph) =
 drawRubberband : Glyph -> Form
 drawRubberband glyph =
   let
-    size = getBoundingBox glyph
+    boundingbox = getBoundingBox glyph
+    size = fst boundingbox
+    offset = snd boundingbox
   in
-    group [
-      (outlined (dashed black) <| uncurry rect <| size)
-    , move (-(fst size) / 2, (snd size) / 2) <| filled black <| circle 5
-    , move (0, (snd size) / 2) <| filled black <| circle 5
-    , move ((fst size) / 2, (snd size) / 2) <| filled black <| circle 5
-    , move (-(fst size) / 2, 0) <| filled black <| circle 5
-    , move ((fst size) / 2, 0) <| filled black <| circle 5
-    , move (-(fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
-    , move (0, -(snd size) / 2) <| filled black <| circle 5
-    , move ((fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
-    ]
+    move offset
+    <| group [
+         (outlined (dashed black) <| uncurry rect <| size)
+       , move (-(fst size) / 2, (snd size) / 2) <| filled black <| circle 5
+       , move (0, (snd size) / 2) <| filled black <| circle 5
+       , move ((fst size) / 2, (snd size) / 2) <| filled black <| circle 5
+       , move (-(fst size) / 2, 0) <| filled black <| circle 5
+       , move ((fst size) / 2, 0) <| filled black <| circle 5
+       , move (-(fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
+       , move (0, -(snd size) / 2) <| filled black <| circle 5
+       , move ((fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
+       ]
 
 drawAsCursor : Toolbar -> Glyph -> Form
 drawAsCursor toolbar ({ entity } as glyph) =
@@ -66,34 +69,70 @@ setDim ({ entity } as glyph) w h =
     Entity.setDim glyph.entity w h
   }
 
-getBoundingBox : Glyph -> Vec.Vec
+mergeIntervals : (Vec.Vec, Vec.Vec) -> Float
+mergeIntervals ((interval1, interval2), (pos1, pos2)) =
+  let
+    left_pos = min (pos1 - interval1 / 2) (pos2 - interval2 / 2)
+    right_pos = max (pos1 + interval1 / 2) (pos2 + interval2 / 2)
+  in
+    abs (right_pos - left_pos)
+
+mergeOffsets : (Vec.Vec, Vec.Vec) -> Float
+mergeOffsets ((interval1, interval2), (pos1, pos2)) =
+  let
+    left_pos = min (pos1 - interval1 / 2) (pos2 - interval2 / 2)
+    right_pos = max (pos1 + interval1 / 2) (pos2 + interval2 / 2)
+  in
+    (left_pos + right_pos) / 2
+
+getBoundingBox : Glyph -> (Vec.Vec, Vec.Vec)
 getBoundingBox glyph =
-  foldl (\t x -> (max (fst t) (fst x), max (snd t) (snd x))) (0, 0)
-  <| map (\x -> boundsForStatement glyph x ) glyph.statements
+  boundsForStatement glyph (Block glyph.statements)
 
+mergeBoundingBoxes : (Vec.Vec, Vec.Vec) -> (Vec.Vec, Vec.Vec) -> (Vec.Vec, Vec.Vec)
+mergeBoundingBoxes (size1, offset1) (size2, offset2) =
+  let
+    sizeX = mergeIntervals ((fst size1, fst size2), (fst offset1, fst offset2))
+    sizeY = mergeIntervals ((snd size1, snd size2), (snd offset1, snd offset2))
+    offsetX = mergeOffsets ((fst size1, fst size2), (fst offset1, fst offset2))
+    offsetY = mergeOffsets ((snd size1, snd size2), (snd offset1, snd offset2))
+  in
+    ((sizeX, sizeY), (offsetX, offsetY))
 
-boundsForStatement : Glyph -> Statement -> Vec.Vec
+boundsForStatement : Glyph -> Statement -> (Vec.Vec, Vec.Vec)
 boundsForStatement glyph statement =
   case statement of
     NoOp ->
-      (0, 0)
+      ((0, 0), (0, 0))
     Block statements ->
-      foldl (\t x -> (max (fst t) (fst x), max (snd t) (snd x))) (0, 0)
-      <| map (\x -> boundsForStatement glyph x) statements
+      foldl (\t x -> mergeBoundingBoxes t x)
+        (boundsForStatement glyph <| head statements)
+        (map (\x -> boundsForStatement glyph x) <| tail statements)
+    Move term statement ->
+      let
+        bbox = boundsForStatement glyph statement
+      in
+        (fst bbox, Vec.add (snd bbox) (compileTupTerm glyph term))
     Draw contour ->
       boundsForContour glyph contour
 
-boundsForContour : Glyph -> Contour -> Vec.Vec
+boundsForContour : Glyph -> Contour -> (Vec.Vec, Vec.Vec)
 boundsForContour ({ entity } as glyph) contour =
   case contour of
     Rectangle (Tup w h) colr ->
-      (compileNumTerm glyph w, compileNumTerm glyph h)
+      ((compileNumTerm glyph w, compileNumTerm glyph h), (0, 0))
     Rectangle EntityDim colr ->
-      entity.dim
+      (entity.dim, (0, 0))
     Circle r colr ->
-      ((2 * compileNumTerm glyph r), (2 * compileNumTerm glyph r))
+      let
+        radius = 2 * compileNumTerm glyph r
+      in
+        ((radius, radius), (0, 0))
     Triangle r colr ->
-      ((2 * compileNumTerm glyph r), (2 * compileNumTerm glyph r))
+      let
+        radius = 2 * compileNumTerm glyph r
+      in
+        ((radius, radius), (0, 0))
 
 ----- Toolbar -----
 
