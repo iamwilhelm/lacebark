@@ -89,8 +89,18 @@ boundsForStatement glyph statement =
     Move term statement ->
       let
         bbox = boundsForStatement glyph statement
+        size = fst bbox
+        offset = snd bbox
       in
-        (fst bbox, Vec.add (snd bbox) (compileTupTerm glyph term))
+        (size, Vec.add offset <| compileTupTerm glyph term)
+    Scale term statement ->
+      let
+        bbox = boundsForStatement glyph statement
+        size = fst bbox
+        offset = snd bbox
+      in
+        (Vec.scale size <| compileTupTerm glyph term,
+         Vec.scale offset <| compileTupTerm glyph term)
     Draw contour ->
       boundsForContour glyph contour
 
