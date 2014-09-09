@@ -7,6 +7,7 @@ import Vec
 import Entity
 import BoundingBox
 
+import Debug
 
 -- a glyph is a combination of shapes. glyph can be composed of many other
 
@@ -101,6 +102,9 @@ boundsForStatement glyph statement =
       in
         (Vec.scale size <| compileTupTerm glyph term,
          Vec.scale offset <| compileTupTerm glyph term)
+    Rotate term statement ->
+      boundsForStatement glyph statement
+
     Draw contour ->
       boundsForContour glyph contour
 
