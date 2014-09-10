@@ -11,6 +11,7 @@ import Axes
 import Camera
 import Input
 import Gpipeline
+import Compile
 
 import Debug
 
@@ -195,19 +196,28 @@ updateApp appInput scene =
 -- TODO convert all draw() methods to toForm methods in namespace
 renderScene : Scene -> [Form]
 renderScene scene =
-  Gpipeline.renderInViewportFrame [
-    Glyph.drawAsCursor scene.toolbar scene.cursor
-  ] <|
-  Gpipeline.renderInCameraFrame scene.camera [
-    Glyph.drawToolbar scene.toolbar
-  ] <|
-  Gpipeline.renderInWorldFrame (Glyph.selectedGlyph scene.toolbar) [
-    Axes.draw scene.axes
-  ] [
-  ] [
-    Glyph.draw scene.toolbar <| Glyph.selectedGlyph scene.toolbar
-  --, Glyph.drawRubberband <| Glyph.selectedGlyph scene.toolbar
-  ]
+  let
+    binding = {
+      stack = [{
+        variables = Dict.empty
+      , toolbar = scene.toolbar
+      }]
+    , glyph = Glyph.selectedGlyph scene.toolbar
+    }
+  in
+    Gpipeline.renderInViewportFrame [
+      Compile.drawAsCursor binding scene.cursor
+    ] <|
+    Gpipeline.renderInCameraFrame scene.camera [
+      Compile.drawToolbar binding scene.toolbar
+    ] <|
+    Gpipeline.renderInWorldFrame (Glyph.selectedGlyph scene.toolbar) [
+      Axes.draw scene.axes
+    ] [
+    ] [
+      Compile.draw binding <| Glyph.selectedGlyph scene.toolbar
+    --, Glyph.drawRubberband <| Glyph.selectedGlyph scene.toolbar
+    ]
 
 
 render : (Int, Int) -> Scene -> Element

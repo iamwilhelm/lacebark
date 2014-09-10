@@ -1,11 +1,11 @@
 module Glyph where
 
 import Dict
-import Transform2D
 import Array
 import Vec
 import Entity
 import BoundingBox
+import L (..)
 
 import Debug
 
@@ -18,41 +18,25 @@ type Glyph = {
   , binding: Dict.Dict String Float
   }
 
-setVar glyph name value =
-  { glyph | binding <- Dict.insert name value glyph.binding }
-
-getVar glyph name =
-  Dict.getOrElse 0 name glyph.binding
-
--- drawing functions without coordinate transforms
-
-draw: Toolbar -> Glyph -> Form
-draw toolbar ({ entity, statements } as glyph) =
-  group <| map (\statement -> compile toolbar glyph statement) statements
-
-drawRubberband : Glyph -> Form
-drawRubberband glyph =
-  let
-    boundingbox = getBoundingBox glyph
-    size = fst boundingbox
-    offset = snd boundingbox
-  in
-    move offset
-    <| group [
-         (outlined (dashed black) <| uncurry rect <| size)
-       , move (-(fst size) / 2, (snd size) / 2) <| filled black <| circle 5
-       , move (0, (snd size) / 2) <| filled black <| circle 5
-       , move ((fst size) / 2, (snd size) / 2) <| filled black <| circle 5
-       , move (-(fst size) / 2, 0) <| filled black <| circle 5
-       , move ((fst size) / 2, 0) <| filled black <| circle 5
-       , move (-(fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
-       , move (0, -(snd size) / 2) <| filled black <| circle 5
-       , move ((fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
-       ]
-
-drawAsCursor : Toolbar -> Glyph -> Form
-drawAsCursor toolbar ({ entity } as glyph) =
-  move entity.pos <| scale 0.5 <| draw toolbar glyph
+--drawRubberband : Glyph -> Form
+--drawRubberband glyph =
+--  let
+--    boundingbox = getBoundingBox glyph
+--    size = fst boundingbox
+--    offset = snd boundingbox
+--  in
+--    move offset
+--    <| group [
+--         (outlined (dashed black) <| uncurry rect <| size)
+--       , move (-(fst size) / 2, (snd size) / 2) <| filled black <| circle 5
+--       , move (0, (snd size) / 2) <| filled black <| circle 5
+--       , move ((fst size) / 2, (snd size) / 2) <| filled black <| circle 5
+--       , move (-(fst size) / 2, 0) <| filled black <| circle 5
+--       , move ((fst size) / 2, 0) <| filled black <| circle 5
+--       , move (-(fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
+--       , move (0, -(snd size) / 2) <| filled black <| circle 5
+--       , move ((fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
+--       ]
 
 setColr : Glyph -> Color -> Glyph
 setColr ({ entity } as glyph) colr =
@@ -73,58 +57,58 @@ setDim ({ entity } as glyph) w h =
   }
 
 
-getBoundingBox : Glyph -> BoundingBox.RangedOffset
-getBoundingBox glyph =
-  boundsForStatement glyph (Block glyph.statements)
-
-
-boundsForStatement : Glyph -> Statement -> BoundingBox.RangedOffset
-boundsForStatement glyph statement =
-  case statement of
-    NoOp ->
-      ((0, 0), (0, 0))
-    Block statements ->
-      foldl (\t x -> BoundingBox.merge t x)
-        (boundsForStatement glyph <| head statements)
-        (map (\x -> boundsForStatement glyph x) <| tail statements)
-    Move term statement ->
-      let
-        bbox = boundsForStatement glyph statement
-        size = fst bbox
-        offset = snd bbox
-      in
-        (size, Vec.add offset <| compileTupTerm glyph term)
-    Scale term statement ->
-      let
-        bbox = boundsForStatement glyph statement
-        size = fst bbox
-        offset = snd bbox
-      in
-        (Vec.scale size <| compileTupTerm glyph term,
-         Vec.scale offset <| compileTupTerm glyph term)
-    Rotate term statement ->
-      boundsForStatement glyph statement
-
-    Draw contour ->
-      boundsForContour glyph contour
-
-boundsForContour : Glyph -> Contour -> (Vec.Vec, Vec.Vec)
-boundsForContour ({ entity } as glyph) contour =
-  case contour of
-    Rectangle (Tup w h) colr ->
-      ((compileNumTerm glyph w, compileNumTerm glyph h), (0, 0))
-    Rectangle EntityDim colr ->
-      (entity.dim, (0, 0))
-    Circle r colr ->
-      let
-        radius = 2 * compileNumTerm glyph r
-      in
-        ((radius, radius), (0, 0))
-    Triangle r colr ->
-      let
-        radius = 2 * compileNumTerm glyph r
-      in
-        ((radius, radius), (0, 0))
+--getBoundingBox : Glyph -> BoundingBox.RangedOffset
+--getBoundingBox glyph =
+--  boundsForStatement glyph (Block glyph.statements)
+--
+--
+--boundsForStatement : Glyph -> Statement -> BoundingBox.RangedOffset
+--boundsForStatement glyph statement =
+--  case statement of
+--    NoOp ->
+--      ((0, 0), (0, 0))
+--    Block statements ->
+--      foldl (\t x -> BoundingBox.merge t x)
+--        (boundsForStatement glyph <| head statements)
+--        (map (\x -> boundsForStatement glyph x) <| tail statements)
+--    Move term statement ->
+--      let
+--        bbox = boundsForStatement glyph statement
+--        size = fst bbox
+--        offset = snd bbox
+--      in
+--        (size, Vec.add offset <| compileTupTerm glyph term)
+--    Scale term statement ->
+--      let
+--        bbox = boundsForStatement glyph statement
+--        size = fst bbox
+--        offset = snd bbox
+--      in
+--        (Vec.scale size <| compileTupTerm glyph term,
+--         Vec.scale offset <| compileTupTerm glyph term)
+--    Rotate term statement ->
+--      boundsForStatement glyph statement
+--
+--    Draw contour ->
+--      boundsForContour glyph contour
+--
+--boundsForContour : Glyph -> Contour -> (Vec.Vec, Vec.Vec)
+--boundsForContour ({ entity } as glyph) contour =
+--  case contour of
+--    Rectangle (Tup w h) colr ->
+--      ((compileNumTerm glyph w, compileNumTerm glyph h), (0, 0))
+--    Rectangle EntityDim colr ->
+--      (entity.dim, (0, 0))
+--    Circle r colr ->
+--      let
+--        radius = 2 * compileNumTerm glyph r
+--      in
+--        ((radius, radius), (0, 0))
+--    Triangle r colr ->
+--      let
+--        radius = 2 * compileNumTerm glyph r
+--      in
+--        ((radius, radius), (0, 0))
 
 ----- Toolbar -----
 
@@ -189,18 +173,6 @@ selectedGlyph : Toolbar -> Glyph
 selectedGlyph toolbar =
   Dict.getOrFail toolbar.selected toolbar.glyphs
 
-drawToolbar : Toolbar -> Form
-drawToolbar ({ glyphs } as toolbar) =
-  move toolbar.entity.pos
-  <| toForm
-  <| flow left
-  <| Dict.foldl (\key glyph cuml ->
-       collage 50 50 [
-         scale 0.15 <| draw toolbar glyph
-       , drawToolbarSelection key toolbar
-       ] :: cuml
-     ) [] glyphs
-
 asList toolbar =
   Dict.values toolbar.glyphs
 
@@ -217,118 +189,6 @@ getGlyph toolbar key =
 
 ----- BNF for language -----
 
-data Statement =
-    NoOp
-  | Block [Statement]
-  | Proc Term [Statement]
-  | Move Term Statement
-  | Rotate Term Statement
-  | Scale Term Statement
-  | Draw Contour
-  | Map Statement [Float]
-  | Include String
-
-data Contour =
-    Rectangle Term Color
-  | Circle Term Color
-  | Triangle Term Color
-
-data Term =
-    Tup Term Term
-  | F Float
-  | Degrees Float
-  | Ref Int Int
-  | EntityOffset Float Float
-  | EntityPos
-  | EntityDim
-  | Add Term Term
-  | Sub Term Term
-  | Mul Term Term
-  | Div Term Term
-  | N
-  | M
-
-
-compile : Toolbar -> Glyph -> Statement -> Form
-compile toolbar glyph statement =
-  case statement of
-    NoOp ->
-      -- TODO don't know how to have an empty Glyph. use Maybe?
-      filled black <| circle 0
-    Block statements ->
-      group <| map (\statement -> compile toolbar glyph statement) statements
-    Move term statement ->
-      group [move (compileTupTerm glyph term) <| compile toolbar glyph statement]
-    Rotate term statement ->
-      rotate (compileNumTerm glyph term) <| compile toolbar glyph statement
-    Scale (Tup x y) statement ->
-      groupTransform
-        (Transform2D.multiply
-          (Transform2D.scaleX (compileNumTerm glyph x))
-          (Transform2D.scaleY (compileNumTerm glyph y))
-        )
-        [compile toolbar glyph statement]
-    Draw contour ->
-      compileContour glyph contour
-    Map (Proc itername statements) list ->
-      let
-        iterkey = compileVarName glyph itername
-        setKey = setVar glyph iterkey
-      in
-        group <| concatMap (\n ->
-          map (\statement -> compile toolbar (setKey n) statement) statements
-        ) list
-    Include childGlyphName ->
-      draw toolbar (Dict.getOrFail childGlyphName toolbar.glyphs)
-
-compileVarName glyph varname =
-  case varname of
-    N -> "n"
-    M -> "m"
-
-compileTupTerm : Glyph -> Term -> (Float, Float)
-compileTupTerm glyph term =
-  case term of
-    EntityPos ->
-      glyph.entity.pos
-    EntityOffset x y ->
-      Vec.add glyph.entity.pos (x, y)
-    Tup x y ->
-      (compileNumTerm glyph x, compileNumTerm glyph y)
-
-compileNumTerm : Glyph -> Term -> Float
-compileNumTerm glyph term =
-  case term of
-    Degrees r ->
-      degrees r
-    F r ->
-      r
-    N ->
-      getVar glyph "n"
-    M ->
-      getVar glyph "m"
-    Add term1 term2 ->
-      compileNumTerm glyph term1 + compileNumTerm glyph term2
-    Sub term1 term2 ->
-      compileNumTerm glyph term1 - compileNumTerm glyph term2
-    Mul term1 term2 ->
-      compileNumTerm glyph term1 * compileNumTerm glyph term2
-    Div term1 term2 ->
-      compileNumTerm glyph term1 / compileNumTerm glyph term2
-
-compileContour : Glyph -> Contour -> Form
-compileContour ({ entity } as glyph) contour =
-  case contour of
-    Rectangle (Tup w h) colr ->
-      filled colr <| rect (compileNumTerm glyph w) (compileNumTerm glyph h)
-    Rectangle (F r) colr ->
-      filled colr <| rect (r * sqrt 2) (r * sqrt 2)
-    Rectangle EntityDim colr ->
-      filled colr <| uncurry rect entity.dim
-    Circle (F r) colr ->
-      filled colr <| circle r
-    Triangle (F r) colr ->
-      filled colr <| ngon 3 r
 
 -- defining various default glyphs
 
@@ -344,21 +204,22 @@ scratchGlyph =
     }
     selected = Nothing
     statements = [
-      --  Rotate (Degrees 60) (
-        Move (Tup (F -100) (F -20)) (
-          Draw (Rectangle EntityDim entity.colr)
+        Rotate (Degrees 60) (
+          Move (Tup (F -100) (F -20)) (
+            Draw (Rectangle EntityDim entity.colr)
+          )
         )
       , Draw (Circle (F 50) orange)
-      , Scale (Tup (F 3) (F 3)) (
+      , Scale (Tup (F 5) (F 3)) (
           Move (Tup (F 50) (F -30)) (
             Draw (Rectangle (Tup (F 20) (F 100)) yellow)
           )
         )
-      , Move (Tup (F 50) (F 50)) (
-          Scale (Tup (F 1) (F 2)) (
-            Draw (Rectangle (Tup (F 150) (F 20)) red)
-          )
-        )
+      --  Move (Tup (F 0) (F 100)) (
+      --    Scale (Tup (F 1) (F 2)) (
+      --      Draw (Rectangle (Tup (F 150) (F 20)) red)
+      --    )
+      --  )
       -- , Map (Proc M [
       --     Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
       --   ]) [1..5]
