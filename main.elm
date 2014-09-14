@@ -80,7 +80,7 @@ updateCurrentGlyph appInput glyph =
     Input.StartDrag (x, y) ->
       glyph
     Input.StopDrag ((sx, sy), (ex, ey)) ->
-      if (sx == ex) && (sy == ey) then
+      if (abs (sx - ex)) < 4 && (abs (sy - ey)) < 4 then
         --Glyph.setPos glyph sx sy
         glyph
       else
@@ -90,7 +90,7 @@ updateSelected : Input.AppInput -> Glyph.Toolbar -> String
 updateSelected appInput toolbar =
   case appInput.mouseEvent of
     Input.StopDrag ((sx, sy), (ex, ey)) ->
-      if (sx == ex) && (sy == ey) then
+      if (abs (sx - ex)) < 4 && (abs (sy - ey)) < 4 then
         Glyph.selectGlyph toolbar sx sy
       else
         toolbar.selected
