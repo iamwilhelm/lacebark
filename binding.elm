@@ -17,6 +17,17 @@ type Binding = {
   , glyph: Glyph.Glyph
 }
 
+initialBinding : Glyph.Toolbar -> Binding
+initialBinding toolbar =
+  {
+    stack = [{
+      variables = Dict.empty
+    , toolbar = toolbar
+    }]
+  , glyph = Glyph.selectedGlyph toolbar
+  }
+
+
 currentScope : Binding -> Scope
 currentScope binding =
   head binding.stack

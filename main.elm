@@ -12,6 +12,7 @@ import Camera
 import Input
 import Gpipeline
 import Compile
+import Binding
 
 import Debug
 
@@ -197,13 +198,7 @@ updateApp appInput scene =
 renderScene : Scene -> [Form]
 renderScene scene =
   let
-    binding = {
-      stack = [{
-        variables = Dict.empty
-      , toolbar = scene.toolbar
-      }]
-    , glyph = Glyph.selectedGlyph scene.toolbar
-    }
+    binding = Binding.initialBinding scene.toolbar
   in
     Gpipeline.renderInViewportFrame [
       Compile.drawAsCursor binding scene.cursor
@@ -216,7 +211,7 @@ renderScene scene =
     ] [
     ] [
       Compile.draw binding <| Glyph.selectedGlyph scene.toolbar
-    --, Glyph.drawRubberband <| Glyph.selectedGlyph scene.toolbar
+    , Compile.drawRubberband binding <| Glyph.selectedGlyph scene.toolbar
     ]
 
 

@@ -18,26 +18,6 @@ type Glyph = {
   , binding: Dict.Dict String Float
   }
 
---drawRubberband : Glyph -> Form
---drawRubberband glyph =
---  let
---    boundingbox = getBoundingBox glyph
---    size = fst boundingbox
---    offset = snd boundingbox
---  in
---    move offset
---    <| group [
---         (outlined (dashed black) <| uncurry rect <| size)
---       , move (-(fst size) / 2, (snd size) / 2) <| filled black <| circle 5
---       , move (0, (snd size) / 2) <| filled black <| circle 5
---       , move ((fst size) / 2, (snd size) / 2) <| filled black <| circle 5
---       , move (-(fst size) / 2, 0) <| filled black <| circle 5
---       , move ((fst size) / 2, 0) <| filled black <| circle 5
---       , move (-(fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
---       , move (0, -(snd size) / 2) <| filled black <| circle 5
---       , move ((fst size) / 2, -(snd size) / 2) <| filled black <| circle 5
---       ]
-
 setColr : Glyph -> Color -> Glyph
 setColr ({ entity } as glyph) colr =
   { glyph | entity <-
@@ -56,59 +36,6 @@ setDim ({ entity } as glyph) w h =
     Entity.setDim glyph.entity w h
   }
 
-
---getBoundingBox : Glyph -> BoundingBox.RangedOffset
---getBoundingBox glyph =
---  boundsForStatement glyph (Block glyph.statements)
---
---
---boundsForStatement : Glyph -> Statement -> BoundingBox.RangedOffset
---boundsForStatement glyph statement =
---  case statement of
---    NoOp ->
---      ((0, 0), (0, 0))
---    Block statements ->
---      foldl (\t x -> BoundingBox.merge t x)
---        (boundsForStatement glyph <| head statements)
---        (map (\x -> boundsForStatement glyph x) <| tail statements)
---    Move term statement ->
---      let
---        bbox = boundsForStatement glyph statement
---        size = fst bbox
---        offset = snd bbox
---      in
---        (size, Vec.add offset <| compileTupTerm glyph term)
---    Scale term statement ->
---      let
---        bbox = boundsForStatement glyph statement
---        size = fst bbox
---        offset = snd bbox
---      in
---        (Vec.scale size <| compileTupTerm glyph term,
---         Vec.scale offset <| compileTupTerm glyph term)
---    Rotate term statement ->
---      boundsForStatement glyph statement
---
---    Draw contour ->
---      boundsForContour glyph contour
---
---boundsForContour : Glyph -> Contour -> (Vec.Vec, Vec.Vec)
---boundsForContour ({ entity } as glyph) contour =
---  case contour of
---    Rectangle (Tup w h) colr ->
---      ((compileNumTerm glyph w, compileNumTerm glyph h), (0, 0))
---    Rectangle EntityDim colr ->
---      (entity.dim, (0, 0))
---    Circle r colr ->
---      let
---        radius = 2 * compileNumTerm glyph r
---      in
---        ((radius, radius), (0, 0))
---    Triangle r colr ->
---      let
---        radius = 2 * compileNumTerm glyph r
---      in
---        ((radius, radius), (0, 0))
 
 ----- Toolbar -----
 
@@ -187,8 +114,6 @@ getGlyph : Toolbar -> String -> Glyph
 getGlyph toolbar key =
   Dict.getOrFail key toolbar.glyphs
 
------ BNF for language -----
-
 
 -- defining various default glyphs
 
@@ -220,10 +145,12 @@ scratchGlyph =
       --      Draw (Rectangle (Tup (F 150) (F 20)) red)
       --    )
       --  )
-      -- , Map (Proc M [
-      --     Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (Include "redcross")
-      --   ]) [1..5]
-      -- , Move (Tup (F -100) (F 0)) (Include "circle")
+      --, Map (Proc M [
+      --    Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (
+      --      Draw (Circle (F 25) green)
+      --    )
+      --  ]) [1..5]
+      --, Move (Tup (F -100) (F 0)) (Include "circle")
       ]
     history = [statements]
     binding = Dict.empty
