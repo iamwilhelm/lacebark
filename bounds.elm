@@ -31,6 +31,8 @@ boundsForStatement binding statement =
         offset = snd bbox
       in
         (size, Vec.add offset <| compileTupTerm binding term)
+    Rotate term statement ->
+      boundsForStatement binding statement
     Scale term statement ->
       let
         bbox = boundsForStatement binding statement
@@ -39,11 +41,19 @@ boundsForStatement binding statement =
       in
         (Vec.scale size <| compileTupTerm binding term,
          Vec.scale offset <| compileTupTerm binding term)
-    Rotate term statement ->
-      boundsForStatement binding statement
-
     Draw contour ->
       boundsForContour binding contour
+    Map (Proc itername statements) list ->
+      let
+        iterkey = compileVarName binding itername
+        setKey = Binding.setVar (Binding.currentScope binding) iterkey
+        bounds = concatMap (\n ->
+          map (\statement ->
+            boundsForStatement { binding | stack <- [setKey n] } statement
+          ) statements
+        ) list
+      in
+        foldl (\t x -> BoundingBox.merge t x) (head bounds) (tail bounds)
 
 boundsForContour : Binding.Binding -> Contour -> (Vec.Vec, Vec.Vec)
 boundsForContour binding contour =

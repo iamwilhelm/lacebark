@@ -140,16 +140,16 @@ scratchGlyph =
             Draw (Rectangle (Tup (F 20) (F 100)) yellow)
           )
         )
-      --  Move (Tup (F 0) (F 100)) (
+      --, Move (Tup (F 0) (F 100)) (
       --    Scale (Tup (F 1) (F 2)) (
       --      Draw (Rectangle (Tup (F 150) (F 20)) red)
       --    )
       --  )
-      --, Map (Proc M [
-      --    Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 60)) (
-      --      Draw (Circle (F 25) green)
-      --    )
-      --  ]) [1..5]
+      , Map (Proc M [
+          Move (Tup (Sub (Mul (F 100) M) (F 300)) (F 150)) (
+            Draw (Circle (F 25) green)
+          )
+        ]) [1..6]
       --, Move (Tup (F -100) (F 0)) (Include "circle")
       ]
     history = [statements]
